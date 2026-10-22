@@ -1,0 +1,453 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name=claude:viewport-fit-sides content=cover><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>.md-table{overflow-x:auto}@media print{.md-table{overflow-x:visible}}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>OUTLINE ĐỒ ÁN (BẢN 3): HỆ THỐNG ĐỊNH DANH PHI TẬP TRUNG (SSI) TRÊN ETHEREUM</h1>
+<p><strong>Nguồn slide:</strong> B1 = Tổng quan Blockchain, B2 = Cơ chế Bitcoin, B3 = Đồng thuận, B4 = Ethereum/DApp, B5 = DeFi.</p>
+<hr>
+<h2>0. KHÓA PHẠM VI: 12 chức năng kỹ thuật + 1 hạng mục báo cáo/thuyết trình (làm đủ trước khi thêm bất cứ gì khác)</h2>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Việc</th>
+<th>Rubric</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>User tạo cặp khóa ví (Web3.py) và tạo DID</td>
+<td>1, 2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>User mã hóa (AES) và upload 3 file (ảnh, PDF, JSON) lên IPFS</td>
+<td>2, 3</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Contract lưu CID, hash, chữ ký Issuer</td>
+<td>1, 3</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Issuer giải mã, xác minh, ký và issue credential</td>
+<td>1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Verifier kiểm tra credential, không cần đọc file</td>
+<td>1</td>
+</tr>
+<tr>
+<td>6</td>
+<td>User grant/revoke consent</td>
+<td>2, 3</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Verifier có consent → retrieve CID từ chain → tải IPFS → giải mã</td>
+<td>2, 3</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Issuer revoke credential</td>
+<td>1</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Issuer mint SBT</td>
+<td>4</td>
+</tr>
+<tr>
+<td>10</td>
+<td>SBT không transfer được</td>
+<td>4</td>
+</tr>
+<tr>
+<td>11</td>
+<td>SBT dùng cho token-gated access</td>
+<td>4</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Deploy, kiểm thử và demo trên <strong>Sepolia</strong></td>
+<td>1</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Báo cáo, slide, video demo</strong> (làm song song từ đầu, không để cuối)</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Chỉ nhắc ngắn, không code: Merkle tree, EIP-712, ERC-5192, EIP-1559, replay/front-running, ZKP, Account Abstraction, multi-chain, W3C VC đầy đủ.</p>
+<hr>
+<h2>PHẦN ĐẦU BÁO CÁO [rubric 5]</h2>
+<ul>
+<li>Trang bìa, mục lục, <strong>danh mục hình</strong>, <strong>danh mục bảng</strong></li>
+<li><strong>Bảng chữ viết tắt:</strong> DID, SSI, SBT, NFT, IPFS, CID, EVM, EOA, ABI, RBAC, PII, AES, RSA, OAEP</li>
+<li>Quy ước: đánh <strong>số trang</strong> và <strong>số slide</strong>; chữ Word <strong>&gt; 14 pt</strong>, slide <strong>&gt; 18 pt</strong> (dùng 15 pt và 20 pt cho an toàn, kể cả bảng, caption, hình); nền và chữ tương phản; mọi hình/bảng có <strong>caption</strong>; video demo có <strong>caption</strong></li>
+</ul>
+<hr>
+<h2>CHƯƠNG 1. TỔNG QUAN</h2>
+<ul>
+<li><strong>1.1 Đặt vấn đề:</strong> định danh tập trung (trung gian giữ dữ liệu, rò rỉ, mỗi nơi giữ một bản sao giấy tờ) → SSI. Nguồn: B1 (4).</li>
+<li><strong>1.2 Mục tiêu:</strong> prototype thực hiện 12 chức năng kỹ thuật ở mục 0.</li>
+<li><strong>1.3 Phạm vi:</strong> prototype môn học, không phải hệ thống production.</li>
+<li><strong>1.4 Các đối tượng:</strong></li>
+</ul>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Đề bài</th>
+<th>Báo cáo</th>
+<th>Ví dụ demo</th>
+<th>Giao diện</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity Creator</td>
+<td>Issuer</td>
+<td>Trường đại học</td>
+<td>Issuer Dashboard</td>
+</tr>
+<tr>
+<td>Identity User</td>
+<td>Holder</td>
+<td>Sinh viên</td>
+<td>User Dashboard</td>
+</tr>
+<tr>
+<td>Identity Manager/Verifier</td>
+<td>Verifier</td>
+<td>Nhà tuyển dụng</td>
+<td>Verifier Dashboard</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Ngoài ra có <strong>Owner</strong> (địa chỉ deploy): chỉ cấp <code>ISSUER_ROLE</code> bằng script lúc deploy, không có giao diện riêng.</p>
+<ul>
+<li><strong>1.5 Kịch bản demo duy nhất:</strong> bằng tốt nghiệp. Hồ sơ gồm <code>portrait.jpg</code>, <code>diploma.pdf</code>, <code>metadata.json</code> (đủ 3 loại dữ liệu).</li>
+</ul>
+<hr>
+<h2>CHƯƠNG 2. CƠ SỞ LÝ THUYẾT (mỗi mục ngắn, 1/2 đến 1 trang)</h2>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Mục</th>
+<th>Nội dung</th>
+<th>Slide</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.1 Blockchain và đồng thuận</td>
+<td>Block, hash, append-only; bất biến nhờ đồng thuận; Ethereum dùng PoS (một đoạn)</td>
+<td>B1 (4-6); B4 (17, 28)</td>
+</tr>
+<tr>
+<td>2.2 Ethereum</td>
+<td>EVM, tài khoản EOA/contract, giao dịch, gas (khái niệm)</td>
+<td>B4 (9-10, 18-22)</td>
+</tr>
+<tr>
+<td>2.3 Smart contract</td>
+<td>Code + state; cấu trúc: biến trạng thái, constructor, hàm, event</td>
+<td>B1 (7); B4 (30)</td>
+</tr>
+<tr>
+<td>2.4 DApp và Web3.py</td>
+<td>Contract thay server; lớp Web3 gọi contract; quy trình compile → ABI → test → deploy</td>
+<td>B4 (11-16)</td>
+</tr>
+<tr>
+<td>2.5 Hash và chữ ký số</td>
+<td>Hash kháng xung đột, cam kết dữ liệu, chữ ký ECDSA</td>
+<td>B1 (31-39)</td>
+</tr>
+<tr>
+<td>2.6 DID và SSI</td>
+<td><code>did:ssi:0x…</code> (cấu trúc mô phỏng DID, <strong>không</strong> phải triển khai đầy đủ <code>did:ethr</code> hay W3C DID/VC); Issuer → Holder → Verifier</td>
+<td>W3C DID Core</td>
+</tr>
+<tr>
+<td>2.7 IPFS</td>
+<td>Địa chỉ theo nội dung, CID; IPFS công khai nên phải mã hóa</td>
+<td>B4 (13)</td>
+</tr>
+<tr>
+<td>2.8 AES + RSA</td>
+<td>AES-GCM mã hóa file; RSA-OAEP bọc khóa AES</td>
+<td>Tài liệu <code>cryptography</code>, RFC 8017, NIST SP 800-38D (B1 trang 38 chỉ là nền tảng RSA/chữ ký)</td>
+</tr>
+<tr>
+<td>2.9 ERC-721 và SBT</td>
+<td>NFT; SBT = chặn chuyển nhượng</td>
+<td>B4 (8) và B5 (12-13) chỉ nhắc ERC-721; SBT dựa trên EIP-721 và OpenZeppelin 5.x</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2>CHƯƠNG 3. PHÂN TÍCH VÀ THIẾT KẾ</h2>
+<p><strong>3.1 Yêu cầu chức năng:</strong> đúng 12 chức năng kỹ thuật ở mục 0. <strong>3.2 Phi chức năng:</strong> không PII on-chain, bất biến, phân quyền, riêng tư.</p>
+<p><strong>3.3 Use case:</strong> 3 actor (Issuer, Holder, Verifier). <strong>3.4 Kiến trúc:</strong> 3 dashboard Python ↔ Web3.py ↔ 3 contract (<code>SSIRegistry</code>, <code>IdentitySBT</code>, <code>GatedService</code>) ↔ Sepolia + IPFS.</p>
+<p><strong>3.5 Dữ liệu on-chain / off-chain</strong></p>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Dữ liệu</th>
+<th>Nơi lưu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DID, địa chỉ ví, RSA public key</td>
+<td>On-chain</td>
+</tr>
+<tr>
+<td>Hash tài liệu (SHA-256 của <code>diploma.pdf</code> gốc)</td>
+<td>On-chain</td>
+</tr>
+<tr>
+<td>3 CID của file đã mã hóa</td>
+<td>On-chain</td>
+</tr>
+<tr>
+<td>Chữ ký số của Issuer trên hash</td>
+<td>On-chain</td>
+</tr>
+<tr>
+<td>Trạng thái credential, consent, SBT</td>
+<td>On-chain</td>
+</tr>
+<tr>
+<td>Khóa AES đã bọc bằng RSA (cho Issuer, Verifier và cho chính Holder để khôi phục)</td>
+<td>On-chain (công khai nhưng chỉ người giữ RSA private key mở được)</td>
+</tr>
+<tr>
+<td>Họ tên, MSSV</td>
+<td>Không lưu on-chain</td>
+</tr>
+<tr>
+<td>Ảnh, PDF, metadata JSON (đã mã hóa)</td>
+<td>IPFS</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>3.6 <code>SSIRegistry.sol</code></strong></p>
+<ul>
+<li>Hàm: <code>registerKey</code>, <code>createDID</code>, <code>requestCredential</code>, <code>issueCredential</code>, <code>verifyCredential</code>, <code>revokeCredential</code>, <code>mintSBT</code>, <code>grantConsent(credentialId, verifier, wrappedKey)</code>, <code>revokeConsent</code>, <code>hasAccess</code></li>
+<li><code>require</code> tường minh: <code>require(hasRole(ISSUER_ROLE, msg.sender))</code> ở <code>issueCredential</code>, <code>revokeCredential</code>, <code>mintSBT</code>; <code>require(!credential.revoked)</code> ở <code>mintSBT</code> và hàm xác nhận; <code>require(credential.issuer == msg.sender)</code> ở <code>revokeCredential</code> và <code>mintSBT</code> (Issuer khác không được thu hồi hay mint thay); <code>require</code> mỗi ví một DID</li>
+<li><code>verifyCredential</code> (view): trả hợp lệ/issuer/thời điểm cấp, <strong>không cần consent, không lộ dữ liệu</strong>. Trạng thái credential (enum): <code>REQUESTED → ISSUED → REVOKED</code>; <code>valid = true</code> chỉ khi <code>ISSUED</code>; credential đã thu hồi trả <code>valid = false</code>, không revert. Phạm vi: mỗi ví một DID, mỗi DID một bằng tốt nghiệp, không làm vô hiệu hóa DID riêng</li>
+<li><strong>Chữ ký Issuer (đề Bước 3):</strong> Issuer ký (EIP-191 <code>personal_sign</code> bằng <code>eth_account</code>) giá trị <code>keccak256(địa chỉ contract, chainId, credentialId, holder, docHash)</code>; <code>issueCredential</code> kiểm tra bằng <code>ECDSA.recover</code> và chỉ lưu nếu khớp Issuer, nên chữ ký không dùng lại được cho hồ sơ hay chain khác. Đây khác chữ ký giao dịch: chữ ký giao dịch cho phép gọi hàm, chữ ký xác nhận gắn với tài liệu</li>
+<li>Event: <code>DIDCreated</code>, <code>CredentialIssued</code>, <code>CredentialRevoked</code>, <code>ConsentGranted</code>, <code>ConsentRevoked</code></li>
+<li>Phân quyền bằng OpenZeppelin <code>AccessControl</code> (không tự xây framework)</li>
+</ul>
+<p><strong>3.7 <code>IdentitySBT.sol</code>:</strong> kế thừa ERC-721; chỉ <code>SSIRegistry</code> mint/burn; override <code>_update</code> (OpenZeppelin 5.x, không dùng hook cũ của 4.x) để revert mọi chuyển token trừ mint/burn; <code>tokenId = credentialId</code>. <strong>Một nguồn trạng thái:</strong> <code>revokeCredential</code> burn SBT trong cùng giao dịch, và <code>mintSBT</code> có <code>require(!revoked)</code>; không bao giờ có credential đã thu hồi mà SBT vẫn hợp lệ.</p>
+<p><strong>3.8 <code>GatedService.sol</code> (cực nhỏ):</strong> <code>accessService()</code> có <code>require(identitySBT.hasValidIdentity(msg.sender), &quot;Access denied&quot;)</code> rồi trả &quot;ACCESS GRANTED&quot;. Không có SBT thì <strong>contract revert</strong>, không phải giao diện tự hiện chữ từ chối. Nếu muốn có bằng chứng trên Etherscan, cho hàm này phát một event.</p>
+<p><strong>3.9 Mã hóa và consent (một khóa AES cho cả hồ sơ)</strong></p>
+<pre><code>Holder:   3 file → AES(k) → 3 file mã hóa → IPFS → 3 CID
+Holder:   bọc k bằng RSA public key của chính mình (khôi phục khóa sau này)
+Holder:   bọc k bằng RSA public key của Issuer → requestCredential(..., cids, wrappedKey)
+Issuer:   giải k → giải file → xác minh → SHA-256(diploma.pdf) → ký → issueCredential
+Holder:   grantConsent(credentialId, verifier, wrapped k cho Verifier)
+Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
+</code></pre>
+<p>Khóa bọc nằm công khai trên chain nhưng chỉ người giữ RSA private key tương ứng mở được; chưa có consent thì chưa có khóa bọc cho Verifier, nên file tải từ IPFS vô dụng. Không cần khóa riêng cho từng file hay thu hồi bằng mật mã (xem hạn chế ở Chương 7).</p>
+<p><strong>Quản lý khóa</strong></p>
+<ul>
+<li>Khóa ví (secp256k1, ký giao dịch, xác định địa chỉ): <code>Account.create</code>, keystore mã hóa bằng mật khẩu. <strong>Khác hoàn toàn</strong> khóa RSA</li>
+<li>Khóa RSA-2048 (bọc khóa AES): mỗi vai trò một cặp; private key lưu file PEM mã hóa bằng mật khẩu trên máy người dùng; public key đăng ký on-chain bằng <code>registerKey</code></li>
+<li>Khóa AES-256-GCM: một khóa mỗi hồ sơ, <strong>nonce 12 byte ngẫu nhiên và khác nhau cho mỗi file</strong>, không bao giờ dùng lại cặp (khóa, nonce)</li>
+<li>Chỉ dùng ví testnet riêng, không dùng ví có tài sản thật; chạy cục bộ, không gửi private key lên server dùng chung</li>
+<li>Mất khóa RSA là mất dữ liệu: nêu ở Chương 7</li>
+</ul>
+<p><strong>3.10 RBAC và consent là hai lớp khác nhau</strong></p>
+<ul>
+<li><strong>RBAC:</strong> &quot;vai trò này được làm loại hành động gì?&quot;</li>
+<li><strong>Consent:</strong> &quot;Holder có đồng ý cho Verifier cụ thể này xem dữ liệu này không?&quot;</li>
+</ul>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Hành động</th>
+<th>Issuer</th>
+<th>Holder</th>
+<th>Verifier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Issue, revoke credential, mint SBT</td>
+<td>✓</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr>
+<td>Tạo DID, upload, grant/revoke consent</td>
+<td>–</td>
+<td>✓</td>
+<td>–</td>
+</tr>
+<tr>
+<td>Verify credential</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Retrieve và giải mã file</td>
+<td>(file Holder gửi để xác minh)</td>
+<td>✓ (chủ sở hữu)</td>
+<td>✓ nếu <strong>có consent</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>3.11 Luồng demo nối ba tiêu chí:</strong> Verifier nhập DID → contract → credential → CID → IPFS (file mã hóa) → kiểm tra consent → giải mã.</p>
+<p><strong>3.12 Sơ đồ tuần tự (3 luồng):</strong> (a) tạo DID, upload, issue; (b) consent và retrieve; (c) revoke (credential + SBT).</p>
+<hr>
+<h2>CHƯƠNG 4. XÂY DỰNG</h2>
+<ul>
+<li><strong>4.1 Công nghệ (chốt một bộ):</strong> Solidity 0.8.x (cố định phiên bản), OpenZeppelin Contracts 5.x; <strong>Hardhat</strong> (biên dịch, chain local); <strong>Web3.py</strong>; <code>cryptography</code> (AES-256-GCM, RSA-OAEP); node IPFS Kubo (gọi HTTP API bằng <code>requests</code>); <strong>Streamlit</strong>; kiểm thử bằng <strong>pytest + Web3.py</strong> trên chain local; <code>.gitignore</code>, <code>.env.example</code>; RPC Sepolia (Alchemy/Infura), khóa đặt trong <code>.env</code>, không đưa lên git.</li>
+<li><strong>4.2 Quy trình:</strong> local → viết contract → unit test → sửa hết lỗi → deploy <strong>Sepolia</strong> → verify mã nguồn Etherscan → frontend Web3.py → demo. Không vừa code vừa thử trực tiếp trên Sepolia.</li>
+<li><strong>4.3 Giải thích contract</strong> từng hàm (rubric 1), kèm <strong>một mục riêng &quot;Kỹ thuật thực hiện ràng buộc&quot;</strong> (rubric 1 yêu cầu trình bày). Với mỗi ràng buộc nêu: mục đích; đoạn code <code>require</code>/<code>hasRole</code>; vì sao đặt ở hàm đó; ca test chứng minh (thành công khi hợp lệ, revert khi vi phạm). Dùng cùng nội dung cho một slide.</li>
+<li><strong>4.4 IPFS:</strong> upload + retrieve 3 loại file.</li>
+<li><strong>4.5 Frontend: 3 dashboard</strong>
+<ul>
+<li><em>Issuer:</em> yêu cầu chờ duyệt, issue, revoke, mint SBT</li>
+<li><em>User:</em> tạo khóa/DID, upload, xem credential, consent, xem SBT</li>
+<li><em>Verifier:</em> nhập DID, verify, retrieve (nếu có consent), thử <code>GatedService</code></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>CHƯƠNG 5. KIỂM THỬ VÀ DEMO</h2>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Ca</th>
+<th>Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tạo DID lần hai</td>
+<td>Revert</td>
+</tr>
+<tr>
+<td>Ví thường gọi <code>issueCredential</code></td>
+<td>Revert</td>
+</tr>
+<tr>
+<td>Issuer hợp lệ issue</td>
+<td>Thành công</td>
+</tr>
+<tr>
+<td>Revoke → Verifier xác minh</td>
+<td>INVALID; SBT bị burn</td>
+</tr>
+<tr>
+<td>Upload 3 file → retrieve → giải mã</td>
+<td>Hash <code>diploma.pdf</code> khớp on-chain</td>
+</tr>
+<tr>
+<td>Sửa 1 byte file</td>
+<td>Verify thất bại</td>
+</tr>
+<tr>
+<td>Verifier truy xuất: chưa consent / có consent / sau revoke consent</td>
+<td>Từ chối / thành công / từ chối (ở mức contract và ứng dụng)</td>
+</tr>
+<tr>
+<td>Mint SBT; thử chuyển User A → B</td>
+<td>Mint OK; chuyển revert</td>
+</tr>
+<tr>
+<td><code>GatedService</code> có và không có SBT</td>
+<td>GRANTED / revert</td>
+</tr>
+<tr>
+<td>Issuer B thu hồi credential của Issuer A</td>
+<td>Revert</td>
+</tr>
+<tr>
+<td>Credential đã thu hồi → <code>verifyCredential</code></td>
+<td><code>valid = false</code>, không revert</td>
+</tr>
+<tr>
+<td>Mã hóa 3 file bằng cùng khóa AES</td>
+<td>Ba nonce khác nhau; giải mã đúng</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Chạy trên Sepolia, lưu hash giao dịch và liên kết Etherscan làm minh chứng. Unit test hợp đồng (pytest + Web3.py trên chain local) là bắt buộc; gas report là tùy chọn. Chuẩn bị demo (rubric: tối đa 1 lỗi giao dịch): nạp sẵn test ETH cho mọi vai trò (faucet có hạn mức ngày), chờ receipt từng giao dịch trong Web3.py, quay video dự phòng có caption. Các ca revert ở bảng trên kiểm thử trong unit test; khi demo trực tiếp chỉ chạy dạng mô phỏng (<code>.call()</code> hoặc ước lượng gas) và để giao diện bắt <code>ContractLogicError</code> hiện &quot;Từ chối theo thiết kế&quot;, không gửi giao dịch lỗi lên Sepolia.</p>
+<p><strong>Câu nói chuẩn khi demo và phản biện về consent:</strong> &quot;Thu hồi consent ngăn hệ thống cấp và truy xuất quyền trong các lần truy cập tiếp theo. Dữ liệu hoặc khóa mà Verifier đã nhận hợp lệ trước khi thu hồi không thể bị blockchain thu hồi khỏi máy của họ.&quot; Không nói &quot;Verifier không thể đọc file nữa&quot;.</p>
+<hr>
+<h2>CHƯƠNG 6. BẢO MẬT VÀ QUYỀN RIÊNG TƯ (ngắn hơn chương 4)</h2>
+<p>6.1 Không PII on-chain (calldata công khai vĩnh viễn, B3 slide 53) · 6.2 Hash và toàn vẹn · 6.3 RBAC · 6.4 AES + RSA · 6.5 Consent · 6.6 Thu hồi (trạng thái mới, lịch sử vẫn còn) · 6.7 Rủi ro smart contract theo B4 (31-41): reentrancy (rủi ro thấp vì không chuyển ETH), overflow (Solidity ≥ 0.8 tự kiểm tra), unexpected Ether (không dùng số dư contract cho logic).</p>
+<h2>CHƯƠNG 7. ĐÁNH GIÁ VÀ HẠN CHẾ</h2>
+<p>Đánh giá theo: phi tập trung, toàn vẹn, riêng tư, kiểm soát, xác minh, thu hồi, chứng nhận. <strong>Hạn chế</strong> (mỗi ý một hai câu):</p>
+<ul>
+<li>Thu hồi consent chỉ xóa khóa bọc khỏi trạng thái contract và chặn truy xuất về sau; khóa bọc vẫn nằm trong lịch sử giao dịch và dữ liệu Verifier đã nhận hợp lệ không thể thu hồi. Muốn thu hồi thật phải mã hóa lại bằng khóa AES mới và upload CID mới (hướng phát triển)</li>
+<li>Consent công khai trên chain</li>
+<li>Mất khóa RSA là mất dữ liệu; contract không đổi được sau deploy; cần pinning IPFS; Issuer là điểm tin cậy</li>
+<li>Chưa xét replay chữ ký, front-running; chưa theo W3C VC đầy đủ</li>
+</ul>
+<h2>CHƯƠNG 8. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN</h2>
+<p>Tóm tắt kết quả. Hướng phát triển: Merkle selective disclosure, EIP-712, ERC-5192, ZKP, Account Abstraction, multi-chain, W3C VC đầy đủ.</p>
+<h2>PHẦN CUỐI</h2>
+<p>Tài liệu tham khảo: slide B1-B5, W3C DID Core, ERC-721, OpenZeppelin, Hardhat, tài liệu Web3.py, IPFS, ethereum.org (Sepolia). Phụ lục: mã nguồn chính, script demo.</p>
+<hr>
+<h2>ĐỐI CHIẾU RUBRIC</h2>
+<div class="md-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Tiêu chí</th>
+<th>Đáp ứng bởi</th>
+<th>Điều kiện đạt điểm tối đa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 (10đ)</td>
+<td>3.6, 4.3, Ch5</td>
+<td>3 nghiệp vụ, 2 <code>require</code>, <strong>trình bày kỹ thuật thực hiện ràng buộc (4.3)</strong>, <strong>kiểm thử và triển khai trên Sepolia</strong>, giải thích hàm</td>
+</tr>
+<tr>
+<td>2 (10đ)</td>
+<td>3.9, 4.5</td>
+<td>3 dashboard, ≥ 3 chức năng on-chain, ≤ 1 lỗi giao dịch, mã hóa RSA/AES</td>
+</tr>
+<tr>
+<td>3 (10đ)</td>
+<td>3.5, 3.10, 4.4</td>
+<td>3 loại dữ liệu, upload + retrieve, <strong>RBAC</strong>, demo truy xuất thành công</td>
+</tr>
+<tr>
+<td>4 (10đ)</td>
+<td>3.7, 3.8</td>
+<td>SBT triển khai, ≥ 2 nghiệp vụ (mint, xác thực), demo giao dịch</td>
+</tr>
+<tr>
+<td>5 (10đ)</td>
+<td>Phần đầu/cuối, mục 0 (việc 13)</td>
+<td>Chính tả, số trang/slide, caption, viết tắt, tham khảo, cỡ chữ, tương phản, video có caption</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2>LƯU Ý KHI VIẾT</h2>
+<ol>
+<li><strong>Không chép lỗi trong slide:</strong> địa chỉ Ethereum là <strong>20 byte</strong> (B4, 18 và 21 ghi 32); kháng xung đột là khó tìm x ≠ y mà H(x) = H(y) (B1, 32 ghi H(x) ≠ H(y)).</li>
+<li>Xóa mọi ghi chú nội bộ kiểu &quot;Tôi đề xuất&quot;, &quot;đúng rubric&quot; và tag nguồn trong bản nộp; thay bằng trích dẫn chuẩn.</li>
+<li>Một người đọc soát chính tả toàn bộ trước khi nộp.</li>
+</ol>
+
+</body></html>
