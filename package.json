@@ -1,0 +1,30 @@
+{
+  "name": "ssi-ethereum-skeleton",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skeleton MVP do an Blockchain SSI tren Ethereum",
+  "scripts": {
+    "compile": "hardhat compile",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "roles:local": "hardhat run scripts/setup-roles.ts --network localhost",
+    "roles:sepolia": "hardhat run scripts/setup-roles.ts --network sepolia",
+    "test": "hardhat test",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@types/node": "^22.10.2",
+    "chai": "^4.5.0",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0"
+  }
+}

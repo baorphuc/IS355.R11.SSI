@@ -1,0 +1,6 @@
+web3>=7.6,<8
+eth-account>=0.13,<0.14
+cryptography>=44,<47
+requests>=2.32,<3
+streamlit>=1.41,<2
+pytest>=8.3,<9
