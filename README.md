@@ -241,6 +241,44 @@ ipfs daemon
 
 `ipfs/kubo_client.py` chỉ nhận file `.enc`. IPFS không phải private storage; tính bí mật phụ thuộc vào AES/RSA và cách quản lý khóa.
 
+#### Cách sử dụng nhanh (Crypto & IPFS - Member B)
+
+```python
+from crypto.crypto_utils import (
+    new_aes_key, generate_rsa_keypair, encrypt_package, decrypt_package,
+    sha256_bytes, wrap_key_for_roles, unwrap_key,
+)
+from ipfs.kubo_client import KuboClient
+
+# 1. Sinh khóa AES-256 cho gói hồ sơ và cặp RSA Holder/Issuer
+aes_key = new_aes_key()
+holder_priv, holder_pub = generate_rsa_keypair("mat-khau-pem")
+issuer_priv, issuer_pub = generate_rsa_keypair("mat-khau-pem")
+
+# 2. docHash = SHA-256 của diploma.pdf bản rõ (trước mã hóa)
+doc_hash = sha256_bytes(diploma_pdf_bytes)
+
+# 3. Mã hóa mỗi file độc lập, nonce 12 byte khác nhau; lưu *.enc
+pkg = encrypt_package(file_bytes, aes_key)
+enc_bytes = pkg.pack()  # wire format: nonce[12] || ciphertext || tag[16]
+
+# 4. Bọc khóa AES riêng cho Holder và Issuer (RSA-OAEP, SHA-256)
+wrapped_holder, wrapped_issuer = wrap_key_for_roles(aes_key, holder_pub, issuer_pub)
+
+# 5. Upload chỉ file đã mã hóa lên Kubo, tải lại bằng CID
+client = KuboClient()
+cid = client.add_bytes(enc_bytes, "diploma.pdf.enc")
+retrieved = client.cat(cid)  # bytes bằng hệt bản upload
+
+# 6. Khôi phục khóa AES bằng private key Holder, giải mã và xác thực
+aes_key_again = unwrap_key(wrapped_holder, holder_priv, "mat-khau-pem")
+plaintext = decrypt_package(pkg, aes_key_again)
+assert sha256_bytes(plaintext) == doc_hash  # nếu là diploma.pdf
+```
+
+- Không upload dữ liệu thô, khóa riêng RSA hoặc mật khẩu lên IPFS/Git.
+- Test IPFS dùng giả Kubo (mock); chạy kiểm thử thật cần `ipfs daemon` tại `127.0.0.1:5001`.
+
 ### 7.6 Sepolia
 
 Điền `SEPOLIA_RPC_URL` và `DEPLOYER_PRIVATE_KEY` vào `.env`, sau đó:
