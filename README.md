@@ -65,7 +65,7 @@ Giao diện tích hợp giữa bốn mảng đã được khóa tại [`docs/2-p
 | Token-gated service | ✅ | `accessService(credentialId)` phát event |
 | AES-GCM và RSA-OAEP | ✅ | Primitive và unit test đã có |
 | Web3.py kết nối Hardhat local | ✅ | Có integration test |
-| IPFS Kubo client | 🟡 | Có client tối thiểu; chưa test ba file end-to-end |
+| IPFS Kubo client | ✅ | Đã kiểm thử Kubo thật (0.43.1): upload/retrieve 3 file .enc, byte-for-byte khớp, docHash matches, RSA-OAEP wrap/unwrap trong luồng thực. Xem `evidence/member_b_kubo_e2e.md`. |
 | Ba dashboard Streamlit | 🟡 | Hiển thị scaffold; nút ghi chain đang là TODO(C) |
 | Deploy Sepolia | ⬜ | Chưa chạy và chưa có tx hash thật |
 | Báo cáo/slide/video nghiệm thu | ⬜ | Nhóm tiếp tục thực hiện theo WBS |
