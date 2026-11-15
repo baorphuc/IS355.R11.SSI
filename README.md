@@ -276,6 +276,12 @@ plaintext = decrypt_package(pkg, aes_key_again)
 assert sha256_bytes(plaintext) == doc_hash  # nếu là diploma.pdf
 ```
 
+- Wire format v1 là **binary cố định**: `nonce[12] || ciphertext || tag[16]`.
+  Gói không chứa RSA wrapped key hoặc AAD; AAD luôn là UTF-8 `ssi-demo-v1`.
+  `EncryptedPackage.unpack()` kiểm tra kích thước tối thiểu trước khi giải mã,
+  còn `pack()` chỉ chấp nhận đúng phiên bản/thuật toán/AAD v1.
+- AES key phải đúng 32 byte. RSA-OAEP dùng MGF1-SHA256, SHA256 và `label=None`;
+  wrapped key là raw RSA ciphertext bytes, không base64.
 - Không upload dữ liệu thô, khóa riêng RSA hoặc mật khẩu lên IPFS/Git.
 - Test IPFS dùng giả Kubo (mock); chạy kiểm thử thật cần `ipfs daemon` tại `127.0.0.1:5001`.
 
