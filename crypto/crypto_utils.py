@@ -38,22 +38,29 @@ def new_aes_key() -> bytes:
     return AESGCM.generate_key(bit_length=256)
 
 
+def _validate_aes_key(key: bytes) -> None:
+    if not isinstance(key, bytes) or len(key) != 32:
+        raise ValueError("AES key must be exactly 32 bytes")
+
+
 def encrypt_bytes(plaintext: bytes, key: bytes, associated_data: bytes = b"ssi-demo-v1") -> bytes:
-    nonce = os.urandom(12)
-    return nonce + AESGCM(key).encrypt(nonce, plaintext, associated_data)
+    """Encrypt bytes and return the v1 wire format.
+
+    The returned payload is always ``nonce[12] || ciphertext || tag[16]``.
+    """
+    return encrypt_package(plaintext, key, associated_data).pack()
 
 
 def decrypt_bytes(payload: bytes, key: bytes, associated_data: bytes = b"ssi-demo-v1") -> bytes:
-    if len(payload) < MIN_PAYLOAD_LEN:
-        raise ValueError("Invalid AES-GCM payload")
-    try:
-        return AESGCM(key).decrypt(payload[:12], payload[12:], associated_data)
-    except InvalidTag as exc:
-        raise ValueError("AES-GCM authentication failed: tag or ciphertext is invalid") from exc
+    """Parse and decrypt a v1 wire-format payload."""
+    return decrypt_package(EncryptedPackage.unpack(payload), key, associated_data)
 
 
 def wrap_key(aes_key: bytes, public_pem: bytes) -> bytes:
+    _validate_aes_key(aes_key)
     public_key = serialization.load_pem_public_key(public_pem)
+    if not isinstance(public_key, rsa.RSAPublicKey):
+        raise ValueError("RSA public key required")
     return public_key.encrypt(
         aes_key,
         padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
@@ -61,11 +68,19 @@ def wrap_key(aes_key: bytes, public_pem: bytes) -> bytes:
 
 
 def unwrap_key(wrapped_key: bytes, private_pem: bytes, password: str) -> bytes:
+    if not isinstance(wrapped_key, bytes) or not wrapped_key:
+        raise ValueError("Wrapped key must not be empty")
+    if not password:
+        raise ValueError("PEM password must not be empty")
     private_key = serialization.load_pem_private_key(private_pem, password=password.encode())
-    return private_key.decrypt(
+    if not isinstance(private_key, rsa.RSAPrivateKey):
+        raise ValueError("RSA private key required")
+    aes_key = private_key.decrypt(
         wrapped_key,
         padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
     )
+    _validate_aes_key(aes_key)
+    return aes_key
 
 
 def sha256_bytes(data: bytes) -> bytes:
@@ -132,6 +147,8 @@ class EncryptedPackage:
             raise EncryptedPackageError(f"Nonce phải dài {NONCE_LEN} byte")
         if len(self.tag) != TAG_LEN:
             raise EncryptedPackageError(f"Thẻ xác thực phải dài {TAG_LEN} byte")
+        if self.aad != AAD_DEFAULT:
+            raise EncryptedPackageError("AAD của wire format v1 phải là ssi-demo-v1")
         return self.nonce + self.ciphertext + self.tag
 
     @classmethod
@@ -164,6 +181,7 @@ def encrypt_package(
     plaintext: bytes, key: bytes, associated_data: bytes = AAD_DEFAULT
 ) -> EncryptedPackage:
     """Mã hóa dữ liệu thô thành gói `EncryptedPackage` (nonce ngẫu nhiên 12 byte)."""
+    _validate_aes_key(key)
     nonce = os.urandom(NONCE_LEN)
     sealed = AESGCM(key).encrypt(nonce, plaintext, associated_data)
     return EncryptedPackage(
@@ -180,6 +198,13 @@ def decrypt_package(
     package: EncryptedPackage, key: bytes, associated_data: bytes = AAD_DEFAULT
 ) -> bytes:
     """Giải mã và xác thực gói; ném `ValueError` nếu xác thực thất bại."""
+    if not isinstance(package, EncryptedPackage):
+        raise EncryptedPackageError("Package phải là EncryptedPackage")
+    _validate_aes_key(key)
+    if package.version != PACKAGE_VERSION or package.algorithm != PACKAGE_ALGORITHM:
+        raise EncryptedPackageError("Package dùng phiên bản hoặc thuật toán không được hỗ trợ")
+    if len(package.nonce) != NONCE_LEN or len(package.tag) != TAG_LEN:
+        raise EncryptedPackageError("Package có nonce hoặc thẻ xác thực không hợp lệ")
     if package.aad != associated_data:
         raise EncryptedPackageError("AAD không khớp giữa gói tin và khóa giải mã")
     try:

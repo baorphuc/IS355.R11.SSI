@@ -88,6 +88,18 @@ def test_aes_gcm_payload_too_short_fails():
         decrypt_bytes(b"short", key)
 
 
+def test_aes_gcm_rejects_non_256_bit_keys():
+    with pytest.raises(ValueError, match="32 bytes"):
+        encrypt_bytes(b"data", b"short")
+
+
+def test_encrypt_bytes_uses_encrypted_package_wire_format():
+    key = new_aes_key()
+    payload = encrypt_bytes(b"data", key)
+    package = EncryptedPackage.unpack(payload)
+    assert package.pack() == payload
+
+
 def test_rsa_oaep_wrap_unwrap_roundtrip():
     private_pem, public_pem = generate_rsa_keypair(RSA_PASSWORD)
     aes_key = new_aes_key()
@@ -241,6 +253,13 @@ def test_encrypt_package_rejects_unsupported_algorithm():
     )
     with pytest.raises(EncryptedPackageError):
         bad.pack()
+
+
+def test_encrypted_package_rejects_non_default_aad_in_wire_format():
+    key = new_aes_key()
+    package = encrypt_package(b"data", key, associated_data=b"custom-aad")
+    with pytest.raises(EncryptedPackageError, match="wire format"):
+        package.pack()
 
 
 def test_decrypt_package_rejects_mismatched_aad():
