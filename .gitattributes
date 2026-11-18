@@ -1,4 +1,4 @@
-﻿# Binary files: preserve original bytes, disable text conversion and diff
+# Binary files: preserve original bytes, disable text conversion and diff
 *.pdf  binary
 *.jpg  binary
 *.jpeg binary
