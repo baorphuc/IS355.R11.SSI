@@ -1,0 +1,7 @@
+﻿# Binary files: preserve original bytes, disable text conversion and diff
+*.pdf  binary
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.enc  binary
+*.zip  binary

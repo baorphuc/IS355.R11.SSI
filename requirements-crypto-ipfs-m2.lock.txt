@@ -1,0 +1,19 @@
+# Tested target: CPython 3.12.10, Windows amd64. Crypto/IPFS + fixture validation only.
+# Does not install dashboard/Web3 dependencies; baseline requirements.txt is unchanged.
+cryptography==46.0.3
+cffi==2.0.0
+pycparser==2.23
+requests==2.32.5
+charset-normalizer==3.4.4
+idna==3.11
+urllib3==2.5.0
+certifi==2025.11.12
+pytest==8.4.2
+iniconfig==2.3.0
+packaging==25.0
+pluggy==1.6.0
+Pygments==2.19.2
+colorama==0.4.6
+Pillow==12.0.0
+PyMuPDF==1.26.6
+reportlab==4.4.5

@@ -1,0 +1,172 @@
+{
+  "baseline_archive_commit": "7227239cff716fc74b5c5ccbe07875be8bb1fc27",
+  "archive_sha256": "30283546e8a5649ab5038ed7b0f653799de37e296087607e3c6a798ae8b5c557",
+  "original_files_checked": 41,
+  "all_original_files_unchanged": true,
+  "files": {
+    ".env.example": {
+      "sha256": "9f0ac5280e6ad23af1278a9de070b39f5eb0f23b3cc9b689c1919fda70eed173",
+      "matches_baseline": true
+    },
+    ".gitignore": {
+      "sha256": "e5e895d7219bd4ddd565ee236c481a0fb8d6263df7cc90aadaa82aa1618deabe",
+      "matches_baseline": true
+    },
+    "README.md": {
+      "sha256": "0669a44a832c81e61ca52bfb541c5f43b92cfc4e85378b000c5c5ab367f39390",
+      "matches_baseline": true
+    },
+    "TEAM_HANDOFF.md": {
+      "sha256": "5762553ab05836f6ccb251a3d60502a074213597fb980476192df28deb591cb9",
+      "matches_baseline": true
+    },
+    "app/common.py": {
+      "sha256": "991d062be4006c7b8321d13f3cf8491f0fddc928f96d6fe1d4b7375fa8f00d3f",
+      "matches_baseline": true
+    },
+    "app/holder.py": {
+      "sha256": "0a35e57be8784a6d6618124cb0b34dff079492f2f136f83b32f35de02c39a09f",
+      "matches_baseline": true
+    },
+    "app/issuer.py": {
+      "sha256": "615b3e23ba897e0c36bed73d3a591fd7ad6c11e4ec492052066bdf38a9b8de76",
+      "matches_baseline": true
+    },
+    "app/verifier.py": {
+      "sha256": "3631e3cd21ce1a6f93b8caaf73093bce0f4164ae5d5d995439b1851f1964622c",
+      "matches_baseline": true
+    },
+    "contracts/GatedService.sol": {
+      "sha256": "42259166d5d68ccd8a65915b6d5fde693ec7d093ee06d329b82fe91536a02638",
+      "matches_baseline": true
+    },
+    "contracts/IdentitySBT.sol": {
+      "sha256": "0ca3ef7858516eca36f94270c1c212c08e3bca11386dace7087d53304099a952",
+      "matches_baseline": true
+    },
+    "contracts/SSIRegistry.sol": {
+      "sha256": "497abe2e53156cdeab919f70511cdc9b705cabc19c01882365c68b881ca17583",
+      "matches_baseline": true
+    },
+    "crypto/__init__.py": {
+      "sha256": "913a72ee85943d6126c1a613ab48a0c923ba174c5130957f73ae119329a744cd",
+      "matches_baseline": true
+    },
+    "crypto/crypto_utils.py": {
+      "sha256": "d9fa6d7ebd89f32427a4dfa747de85c44ba39aaab03619c5d9e5aca5feb1d897",
+      "matches_baseline": true
+    },
+    "deployments/.gitkeep": {
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "matches_baseline": true
+    },
+    "docs/1-initiation-phase/project-charter.md": {
+      "sha256": "184ffedb0a637b9b08b2c1dc530e59ac6a7c86f9a48f5e5efbba0589b4bfb72e",
+      "matches_baseline": true
+    },
+    "docs/1-initiation-phase/wbs.xlsx": {
+      "sha256": "17131f062a675be1a7a8d4c9fdb3fa0cb5303012b5e7e02f4a93b3ed6ddfad3a",
+      "matches_baseline": true
+    },
+    "docs/2-planning-phase/architecture.md": {
+      "sha256": "4174a83633c17e1a812d57f3342ba7dce31e6db8d9ffda88d85c12d9853d7d98",
+      "matches_baseline": true
+    },
+    "docs/2-planning-phase/contracts-spec.md": {
+      "sha256": "d62c6b76434ee5f4e2912f101868299bc03677429bfa557bbe37edf0225a6657",
+      "matches_baseline": true
+    },
+    "docs/2-planning-phase/interfaces.md": {
+      "sha256": "b67c19d6532e59f1fb2dac93625386966b1cef157258903114b2a2f9c362c0bf",
+      "matches_baseline": true
+    },
+    "docs/2-planning-phase/key-management.md": {
+      "sha256": "6795fb287933b2a01615fc7840f0b5d7da7f3e4b95229e7a7e54ef76255c9e92",
+      "matches_baseline": true
+    },
+    "docs/4-testing-phase/test-plan.md": {
+      "sha256": "2e1aca6ae02e2194eff4936015f292820b2b13e4b27a420925ce405ad22500c5",
+      "matches_baseline": true
+    },
+    "docs/README.md": {
+      "sha256": "c50e2a9a119716754c3a33a8845e24807ff24201c162d39c4dbbab092a180fc3",
+      "matches_baseline": true
+    },
+    "docs/outline-ssi-v3.html": {
+      "sha256": "3fc96341d04e72674f67e8c27ae4a046a6d2b5b6beb5a51f94bb5c1da5b9544b",
+      "matches_baseline": true
+    },
+    "evidence/member_b_kubo_e2e.md": {
+      "sha256": "36c99640262f9a9a8f7c443190c8937bf4866b900a9a201aa8b769e9efc02bb0",
+      "matches_baseline": true
+    },
+    "hardhat.config.ts": {
+      "sha256": "e6b72046486680b08f4b8cb8c581d19da6ae2c4c2201c8a8b0c6c0dc68345ac4",
+      "matches_baseline": true
+    },
+    "ipfs/__init__.py": {
+      "sha256": "1d321077cea6d762556dfabd3315a41ff0688eb74bba7cc2e521391b3973b8d0",
+      "matches_baseline": true
+    },
+    "ipfs/kubo_client.py": {
+      "sha256": "6930b1bbbbda6b71d63ac0eb1526c7e9d30a88cc732700efdbc7c7ffc6e6f73f",
+      "matches_baseline": true
+    },
+    "package-lock.json": {
+      "sha256": "b823117208227bbb9ea7c2ca2fb3dce9bfca1f78863275d6937d14ebc840ecb8",
+      "matches_baseline": true
+    },
+    "package.json": {
+      "sha256": "cf539f56663882e1cb9c24743b5129f6d87c989d1290bda92b87f3062666a349",
+      "matches_baseline": true
+    },
+    "requirements.txt": {
+      "sha256": "3ef7950374eb61d2324d04d0783c81e9c1d8896ac2f99750e795491de8fd3569",
+      "matches_baseline": true
+    },
+    "scripts/deploy.ts": {
+      "sha256": "368481944e026075aee2b0cb52ebc149205a49aeac94899cacb169f067a5add0",
+      "matches_baseline": true
+    },
+    "scripts/setup-roles.ts": {
+      "sha256": "cc609a54fe1b3e93bb2e6bcfa2f132d9fad6613f9603cb2f789229eef0b91982",
+      "matches_baseline": true
+    },
+    "test/contracts.ts": {
+      "sha256": "222dc7b1c5f8549fc3c63b0b0970ba5c7a290d0010be871e593ffabd3f557eaf",
+      "matches_baseline": true
+    },
+    "tests/integration/test_hardhat_web3.py": {
+      "sha256": "78525ba3ad355b9fa3a01d3b54b457954955e08f6950c883b1654572ba647831",
+      "matches_baseline": true
+    },
+    "tests/unit/conftest.py": {
+      "sha256": "75b118b6cec9e94c6ea78035dcab30d90824c448e013e7090adfb25ebdadc9de",
+      "matches_baseline": true
+    },
+    "tests/unit/test_crypto.py": {
+      "sha256": "60da8983a2f87bf283f60bb976010c29b96a95a3f10ff17404d24791523878aa",
+      "matches_baseline": true
+    },
+    "tests/unit/test_e2e_three_files.py": {
+      "sha256": "a931bd63e4fcf680af0eb74cf24d068aca78da2c1b9ca2fa7b7d3bf466eb3743",
+      "matches_baseline": true
+    },
+    "tests/unit/test_ipfs.py": {
+      "sha256": "63f89ce3431fd238316c4056deac3834453daae83e14db2f93ae521ab851d13a",
+      "matches_baseline": true
+    },
+    "tsconfig.json": {
+      "sha256": "c8463f364145f44cd70e3b8471fba367bb1e6cb54a3c8618e6fe843281ad9e85",
+      "matches_baseline": true
+    },
+    "web3_client/__init__.py": {
+      "sha256": "c99dba27c40ed44c7ec082aeeb3e3ddefbd6df210e7703f528fd7d76a3df54b4",
+      "matches_baseline": true
+    },
+    "web3_client/client.py": {
+      "sha256": "94bc6bcbb18caeff99192870ed6f37f4e56888f4a6c30f695fd8680d27aadd6f",
+      "matches_baseline": true
+    }
+  }
+}

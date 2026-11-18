@@ -1,0 +1,25 @@
+{
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "executable": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\python312\\python.exe",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "baseline": "7227239cff716fc74b5c5ccbe07875be8bb1fc27",
+  "packages": {
+    "PyMuPDF": "1.26.6",
+    "Pygments": "2.19.2",
+    "certifi": "2025.11.12",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.4",
+    "colorama": "0.4.6",
+    "cryptography": "46.0.3",
+    "idna": "3.11",
+    "iniconfig": "2.3.0",
+    "packaging": "25.0",
+    "pillow": "12.0.0",
+    "pluggy": "1.6.0",
+    "pycparser": "2.23",
+    "pytest": "8.4.2",
+    "reportlab": "4.4.5",
+    "requests": "2.32.5",
+    "urllib3": "2.5.0"
+  }
+}
