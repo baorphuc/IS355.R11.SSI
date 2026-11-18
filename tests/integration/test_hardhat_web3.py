@@ -58,3 +58,20 @@ def test_web3_lifecycle_on_hardhat(w3: Web3):
     receipt = w3.eth.wait_for_transaction_receipt(gate.functions.accessService(1).transact({"from": holder}))
     assert len(gate.events.ServiceAccessed().process_receipt(receipt)) == 1
     assert registry.functions.verifyCredential(1).call()[0] is True
+
+    # Revoke Credential: trạng thái chuyển sang REVOKED và SBT bị burn.
+    registry.functions.revokeCredential(1).transact({"from": issuer})
+
+    credential = registry.functions.getCredential(1).call()
+
+    # CredentialStatus.REVOKED = 3
+    assert int(credential[9]) == 3
+    assert credential[12] is False
+
+    # Xác nhận SBT không còn tồn tại.
+    with pytest.raises(Exception):
+        sbt.functions.ownerOf(1).call()
+
+    # Gated Service phải từ chối Credential đã bị revoke.
+    with pytest.raises(Exception):
+        gate.functions.accessService(1).call({"from": holder})

@@ -1,0 +1,15 @@
+{
+  "all-unit.log": "fcbe96c0e91447b340ffbafd26b8bd8ff629c6eea09e425101cb6c20f97bd29b",
+  "baseline-unit.log": "83a69972546fe81d99e80e132bb8605973d6d1a3b5be9ff56e4912e705d0f59c",
+  "commands.json": "83fb51c7ff8bb075ba95c63b8db7280bf4fc27619fdcca92c83bbf4df0cac216",
+  "environment.json": "cba032adcf5d14ae7e132095777fedf5c4de8bbe4d01aa1a2fba1a849baab45e",
+  "fixture-generation.log": "ebf02bd5d30b9eb5d9bf340226dc1e42e0b8324f001a8d0cf63b2012b59f074a",
+  "kubo-api-config.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "kubo-daemon.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "kubo-daemon.stdout.log": "0a323fecaba8b323f1606e4beaf9eb31592c7e03f940347140678002908a2b36",
+  "kubo-gateway-config.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "kubo-init.log": "43b191615ab837d9fca62a0eb16e74210d3b1c4720fd39618df0cf46aba4f3c9",
+  "kubo-swarm-config.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "kubo-version.log": "32d7b5d9facc34b0e14a5a2e899e34d27feb2099020a6eb0461847699a59cbe5",
+  "summary.json": "8a56f4579cad299c707f8cc3d6ef76f77e6e1f58280d61fd2d22d3905c237490"
+}

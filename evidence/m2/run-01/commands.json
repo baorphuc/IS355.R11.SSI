@@ -1,0 +1,136 @@
+[
+  {
+    "label": "baseline-unit",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\python312\\python.exe",
+      "-m",
+      "pytest",
+      "tests/unit/test_crypto.py",
+      "tests/unit/test_ipfs.py",
+      "tests/unit/test_e2e_three_files.py",
+      "-vv",
+      "-p",
+      "no:cacheprovider"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:21.451682+00:00",
+    "raw_log": "baseline-unit.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:24.878390+00:00"
+  },
+  {
+    "label": "fixture-generation",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\python312\\python.exe",
+      "-u",
+      "tests/manual/crypto_ipfs_m2.py",
+      "--generate-fixtures"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:24.878390+00:00",
+    "raw_log": "fixture-generation.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:26.294290+00:00"
+  },
+  {
+    "label": "all-unit",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\python312\\python.exe",
+      "-m",
+      "pytest",
+      "tests/unit",
+      "-vv",
+      "-p",
+      "no:cacheprovider"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:26.295450+00:00",
+    "raw_log": "all-unit.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:31.731755+00:00"
+  },
+  {
+    "label": "kubo-version",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo\\kubo\\ipfs.exe",
+      "version",
+      "--all"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:31.732782+00:00",
+    "raw_log": "kubo-version.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:31.766539+00:00"
+  },
+  {
+    "label": "kubo-init",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo\\kubo\\ipfs.exe",
+      "init",
+      "--profile=test",
+      "--algorithm=ed25519"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:31.767541+00:00",
+    "raw_log": "kubo-init.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:31.858337+00:00"
+  },
+  {
+    "label": "kubo-api-config",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo\\kubo\\ipfs.exe",
+      "config",
+      "Addresses.API",
+      "/ip4/127.0.0.1/tcp/15001"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:31.860849+00:00",
+    "raw_log": "kubo-api-config.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:31.925064+00:00"
+  },
+  {
+    "label": "kubo-swarm-config",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo\\kubo\\ipfs.exe",
+      "config",
+      "--json",
+      "Addresses.Swarm",
+      "[]"
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:31.926059+00:00",
+    "raw_log": "kubo-swarm-config.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:31.989465+00:00"
+  },
+  {
+    "label": "kubo-gateway-config",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo\\kubo\\ipfs.exe",
+      "config",
+      "--json",
+      "Addresses.Gateway",
+      "\"\""
+    ],
+    "cwd": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\review-source\\IS355.R11.SSI-main",
+    "started_utc": "2026-11-17T08:15:31.991507+00:00",
+    "raw_log": "kubo-gateway-config.log",
+    "exit_code": 0,
+    "finished_utc": "2026-11-17T08:15:32.058066+00:00"
+  },
+  {
+    "label": "kubo-daemon",
+    "argv": [
+      "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo\\kubo\\ipfs.exe",
+      "daemon",
+      "--offline"
+    ],
+    "IPFS_PATH": "C:\\Users\\MR DAI\\OneDrive\\Documents\\ChatGPT\\Blockchain SSI\\.m2-tools\\kubo-repo-run01",
+    "raw_log": [
+      "kubo-daemon.stdout.log",
+      "kubo-daemon.stderr.log"
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "containsPII": false,
+  "documentType": "test-diploma",
+  "fixtureId": "M2-0001",
+  "schema": "ssi-demo-fixture-v1",
+  "synthetic": true
+}
