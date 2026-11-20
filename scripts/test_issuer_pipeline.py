@@ -1,3 +1,4 @@
+from web3_client.role_keys import verified_pair
 
 import os
 from pathlib import Path
@@ -35,9 +36,6 @@ ipfs_url = required_env("IPFS_API_URL")
 issuer_password = required_env("ISSUER_RSA_PASSWORD")
 registry_address = required_env("SSI_REGISTRY_ADDRESS")
 
-issuer_private_pem = (
-    ROOT / "keys" / "issuer_private.pem"
-).read_bytes()
 
 
 # --------------------------------------------------
@@ -65,6 +63,8 @@ registry = client.load_contract(
     registry_address,
     artifact,
 )
+issuer_private_pem, issuer_public_pem = verified_pair(registry, required_env("ISSUER_ADDRESS"), ROOT / "keys", "issuer", required_env("ISSUER_RSA_PASSWORD"))
+
 
 print("Chain ID:", client.w3.eth.chain_id)
 print("Registry:", registry.address)

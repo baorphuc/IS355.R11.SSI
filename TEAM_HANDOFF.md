@@ -90,7 +90,7 @@ Việc cần làm:
 1. Viết wrapper có kiểu cho từng hàm ABI từ artifact; không chép tay ABI.
 2. Nối Holder với `registerKey`, `createDID`, `requestCredential`, consent và revoke consent.
 3. Nối Issuer với đọc request, giải mã hồ sơ, tạo chữ ký EIP-191, issue, mint và revoke.
-4. Nối Verifier với verify công khai, kiểm tra consent, giải mã khi có quyền và gọi gate.
+4. Nối Verifier với verify công khai, kiểm tra consent và giải mã khi có quyền; Holder (không phải Verifier) gọi gate khi sở hữu SBT hợp lệ.
 5. Hiển thị trạng thái chờ/xác nhận/lỗi, transaction hash và dữ liệu kiểm chứng cần thiết.
 6. Không cho nhập hoặc hiển thị private key trên Streamlit; key chỉ đọc từ `.env`.
 7. Chuẩn bị ảnh giao diện và video demo dự phòng có caption.

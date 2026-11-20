@@ -1,5 +1,6 @@
 import hashlib
 import os
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,11 +28,21 @@ def generate_rsa_keypair(password: str) -> tuple[bytes, bytes]:
 
 def save_private_pem(path: Path, private_pem: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(private_pem)
-    try:
-        os.chmod(path, 0o600)
-    except OSError:
-        pass
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0), 0o600)
+    with os.fdopen(fd, "wb") as target:
+        if os.name == "nt":
+            # Restrict the newly created, still empty file before writing secret bytes.
+            command = """$ErrorActionPreference='Stop'
+$p=$env:SSI_PEM_ACL_PATH
+$sid=[Security.Principal.WindowsIdentity]::GetCurrent().User
+$acl=New-Object Security.AccessControl.FileSecurity
+$acl.SetAccessRuleProtection($true,$false)
+$acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($sid,'FullControl','Allow'))
+[IO.File]::SetAccessControl($p,$acl)"""
+            subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+                           env={**os.environ, "SSI_PEM_ACL_PATH": str(path.resolve())},
+                           capture_output=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        target.write(private_pem)
 
 
 def new_aes_key() -> bytes:

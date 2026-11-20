@@ -1,3 +1,4 @@
+from web3_client.role_keys import verified_pair
 
 import os
 from pathlib import Path
@@ -76,6 +77,8 @@ registry = client.load_contract(
     registry_address,
     artifact,
 )
+issuer_private_pem, issuer_public_pem = verified_pair(registry, issuer_address, ROOT / "keys", "issuer", required_env("ISSUER_RSA_PASSWORD"))
+
 
 print("Chain ID:", client.w3.eth.chain_id)
 print("Issuer:", issuer_address)

@@ -128,7 +128,7 @@
 </tbody>
 </table>
 </div>
-<p>Ngoài ra có <strong>Owner</strong> (địa chỉ deploy): chỉ cấp <code>ISSUER_ROLE</code> bằng script lúc deploy, không có giao diện riêng.</p>
+<p>Ngoài ra có <strong>Owner</strong> (địa chỉ deploy): cấp <code>ISSUER_ROLE</code> qua script setup đã kiểm tra signer/manifest rồi đọc lại role; không có giao diện admin riêng.</p>
 <ul>
 <li><strong>1.5 Kịch bản demo duy nhất:</strong> bằng tốt nghiệp. Hồ sơ gồm <code>portrait.jpg</code>, <code>diploma.pdf</code>, <code>metadata.json</code> (đủ 3 loại dữ liệu).</li>
 </ul>
@@ -242,18 +242,18 @@
 <p><strong>3.6 <code>SSIRegistry.sol</code></strong></p>
 <ul>
 <li>Hàm: <code>registerKey</code>, <code>createDID</code>, <code>requestCredential</code>, <code>issueCredential</code>, <code>verifyCredential</code>, <code>revokeCredential</code>, <code>mintSBT</code>, <code>grantConsent(credentialId, verifier, wrappedKey)</code>, <code>revokeConsent</code>, <code>hasAccess</code></li>
-<li><code>require</code> tường minh: <code>require(hasRole(ISSUER_ROLE, msg.sender))</code> ở <code>issueCredential</code>, <code>revokeCredential</code>, <code>mintSBT</code>; <code>require(!credential.revoked)</code> ở <code>mintSBT</code> và hàm xác nhận; <code>require(credential.issuer == msg.sender)</code> ở <code>revokeCredential</code> và <code>mintSBT</code> (Issuer khác không được thu hồi hay mint thay); <code>require</code> mỗi ví một DID</li>
-<li><code>verifyCredential</code> (view): trả hợp lệ/issuer/thời điểm cấp, <strong>không cần consent, không lộ dữ liệu</strong>. Trạng thái credential (enum): <code>REQUESTED → ISSUED → REVOKED</code>; <code>valid = true</code> chỉ khi <code>ISSUED</code>; credential đã thu hồi trả <code>valid = false</code>, không revert. Phạm vi: mỗi ví một DID, mỗi DID một bằng tốt nghiệp, không làm vô hiệu hóa DID riêng</li>
-<li><strong>Chữ ký Issuer (đề Bước 3):</strong> Issuer ký (EIP-191 <code>personal_sign</code> bằng <code>eth_account</code>) giá trị <code>keccak256(địa chỉ contract, chainId, credentialId, holder, docHash)</code>; <code>issueCredential</code> kiểm tra bằng <code>ECDSA.recover</code> và chỉ lưu nếu khớp Issuer, nên chữ ký không dùng lại được cho hồ sơ hay chain khác. Đây khác chữ ký giao dịch: chữ ký giao dịch cho phép gọi hàm, chữ ký xác nhận gắn với tài liệu</li>
+<li><code>require</code> tường minh: <code>require(hasRole(ISSUER_ROLE, msg.sender))</code> ở <code>issueCredential</code>, <code>revokeCredential</code>, <code>mintSBT</code>; mint yêu cầu trạng thái <code>ISSUED</code> và chưa mint; <code>require(credential.issuer == msg.sender)</code> ở <code>revokeCredential</code> và <code>mintSBT</code> (Issuer khác không được thu hồi hay mint thay); <code>require</code> mỗi ví một DID</li>
+<li><code>verifyCredential</code> (view): trả đúng <code>(bool valid, address holder, address issuer, uint8 status, bytes32 docHash)</code>, <strong>không cần consent, không lộ dữ liệu hay thời điểm cấp</strong>. Trạng thái credential (enum): <code>NONE → REQUESTED → ISSUED → REVOKED</code>; <code>valid = true</code> chỉ khi <code>ISSUED</code>; credential chưa tồn tại, đang request hoặc đã thu hồi trả <code>valid = false</code>, không revert. Phạm vi: mỗi ví một DID, một DID có thể có nhiều Credential, mỗi lần gọi <code>requestCredential()</code> hợp lệ tạo một <code>credentialId</code> mới, không làm vô hiệu hóa DID riêng</li>
+<li><strong>Chữ ký Issuer (đề Bước 3):</strong> trước hết tạo digest thô 32 byte <code>keccak256(abi.encode(registryAddress, chainId, credentialId, holderAddress, docHash))</code>, sau đó Issuer áp dụng EIP-191 <code>personal_sign</code> bằng <code>eth_account</code> trên đúng 32 byte này, không ký chuỗi hex/JSON. <code>issueCredential</code> kiểm tra bằng <code>ECDSA.recover</code> và chỉ lưu nếu khớp Issuer, nên chữ ký không dùng lại được cho hồ sơ hay chain khác. Đây khác chữ ký giao dịch: chữ ký giao dịch cho phép gọi hàm, chữ ký xác nhận gắn với tài liệu</li>
 <li>Event: <code>DIDCreated</code>, <code>CredentialIssued</code>, <code>CredentialRevoked</code>, <code>ConsentGranted</code>, <code>ConsentRevoked</code></li>
 <li>Phân quyền bằng OpenZeppelin <code>AccessControl</code> (không tự xây framework)</li>
 </ul>
-<p><strong>3.7 <code>IdentitySBT.sol</code>:</strong> kế thừa ERC-721; chỉ <code>SSIRegistry</code> mint/burn; override <code>_update</code> (OpenZeppelin 5.x, không dùng hook cũ của 4.x) để revert mọi chuyển token trừ mint/burn; <code>tokenId = credentialId</code>. <strong>Một nguồn trạng thái:</strong> <code>revokeCredential</code> burn SBT trong cùng giao dịch, và <code>mintSBT</code> có <code>require(!revoked)</code>; không bao giờ có credential đã thu hồi mà SBT vẫn hợp lệ.</p>
-<p><strong>3.8 <code>GatedService.sol</code> (cực nhỏ):</strong> <code>accessService()</code> có <code>require(identitySBT.hasValidIdentity(msg.sender), &quot;Access denied&quot;)</code> rồi trả &quot;ACCESS GRANTED&quot;. Không có SBT thì <strong>contract revert</strong>, không phải giao diện tự hiện chữ từ chối. Nếu muốn có bằng chứng trên Etherscan, cho hàm này phát một event.</p>
+<p><strong>3.7 <code>IdentitySBT.sol</code>:</strong> kế thừa ERC-721; chỉ <code>SSIRegistry</code> đã bind một lần mới mint/burn; override <code>_update</code> (OpenZeppelin 5.x, không dùng hook cũ của 4.x) để revert mọi chuyển token trừ mint/burn; <code>tokenId = credentialId</code>. Không hỗ trợ đổi Registry trong MVP. <strong>Một nguồn trạng thái:</strong> <code>revokeCredential</code> burn SBT trong cùng giao dịch, và <code>mintSBT</code> yêu cầu credential đang <code>ISSUED</code> và chưa mint; không bao giờ có credential đã thu hồi mà SBT vẫn hợp lệ.</p>
+<p><strong>3.8 <code>GatedService.sol</code> (cực nhỏ):</strong> Holder gọi <code>accessService(uint256 credentialId)</code> bằng chính ví sở hữu SBT có <code>tokenId = credentialId</code>; contract kiểm tra SBT thuộc <code>msg.sender</code> và Registry xác nhận Credential còn <code>ISSUED</code> cho đúng Holder. Gate không gọi <code>hasAccess</code> và không kiểm tra Consent của Verifier. Nếu hợp lệ phát event <code>ServiceAccessed</code>. Không có/không sở hữu SBT hoặc Credential đã thu hồi thì <strong>contract revert</strong>, không phải giao diện tự hiện chữ từ chối.</p>
 <p><strong>3.9 Mã hóa và consent (một khóa AES cho cả hồ sơ)</strong></p>
 <pre><code>Holder:   3 file → AES(k) → 3 file mã hóa → IPFS → 3 CID
 Holder:   bọc k bằng RSA public key của chính mình (khôi phục khóa sau này)
-Holder:   bọc k bằng RSA public key của Issuer → requestCredential(..., cids, wrappedKey)
+Holder:   bọc k bằng RSA public key của Holder và Issuer → requestCredential(portraitCid, diplomaCid, metadataCid, wrappedKeyForHolder, wrappedKeyForIssuer)
 Issuer:   giải k → giải file → xác minh → SHA-256(diploma.pdf) → ký → issueCredential
 Holder:   grantConsent(credentialId, verifier, wrapped k cho Verifier)
 Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
@@ -262,7 +262,7 @@ Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
 <p><strong>Quản lý khóa</strong></p>
 <ul>
 <li>Khóa ví (secp256k1, ký giao dịch, xác định địa chỉ): <code>Account.create</code>, keystore mã hóa bằng mật khẩu. <strong>Khác hoàn toàn</strong> khóa RSA</li>
-<li>Khóa RSA-2048 (bọc khóa AES): mỗi vai trò một cặp; private key lưu file PEM mã hóa bằng mật khẩu trên máy người dùng; public key đăng ký on-chain bằng <code>registerKey</code></li>
+<li>Khóa RSA-3072 (bọc khóa AES): mỗi vai trò một cặp; private key lưu file PEM PKCS8 mã hóa bằng mật khẩu trên máy người dùng; public key PEM SPKI đăng ký on-chain một lần bằng <code>registerKey</code>. Fingerprint là SHA-256 của DER SubjectPublicKeyInfo; phải backup private PEM trước khi đăng ký vì MVP không có rotation/rewrap.</li>
 <li>Khóa AES-256-GCM: một khóa mỗi hồ sơ, <strong>nonce 12 byte ngẫu nhiên và khác nhau cho mỗi file</strong>, không bao giờ dùng lại cặp (khóa, nonce)</li>
 <li>Chỉ dùng ví testnet riêng, không dùng ví có tài sản thật; chạy cục bộ, không gửi private key lên server dùng chung</li>
 <li>Mất khóa RSA là mất dữ liệu: nêu ở Chương 7</li>
@@ -314,7 +314,7 @@ Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
 <hr>
 <h2>CHƯƠNG 4. XÂY DỰNG</h2>
 <ul>
-<li><strong>4.1 Công nghệ (chốt một bộ):</strong> Solidity 0.8.x (cố định phiên bản), OpenZeppelin Contracts 5.x; <strong>Hardhat</strong> (biên dịch, chain local); <strong>Web3.py</strong>; <code>cryptography</code> (AES-256-GCM, RSA-OAEP); node IPFS Kubo (gọi HTTP API bằng <code>requests</code>); <strong>Streamlit</strong>; kiểm thử bằng <strong>pytest + Web3.py</strong> trên chain local; <code>.gitignore</code>, <code>.env.example</code>; RPC Sepolia (Alchemy/Infura), khóa đặt trong <code>.env</code>, không đưa lên git.</li>
+<li><strong>4.1 Công nghệ (chốt một bộ):</strong> Solidity 0.8.x (cố định phiên bản), OpenZeppelin Contracts 5.x; <strong>Hardhat</strong> (biên dịch, chain local, Hardhat/TypeScript contract tests); <strong>Web3.py</strong> (Web3.py integration test với chain local); <code>cryptography</code> (AES-256-GCM, RSA-OAEP); node IPFS Kubo (gọi HTTP API bằng <code>requests</code>); <strong>Streamlit</strong>; <strong>pytest</strong> cho Python unit tests; <code>.gitignore</code>, <code>.env.example</code>; RPC Sepolia (Alchemy/Infura), khóa đặt trong <code>.env</code>, không đưa lên git.</li>
 <li><strong>4.2 Quy trình:</strong> local → viết contract → unit test → sửa hết lỗi → deploy <strong>Sepolia</strong> → verify mã nguồn Etherscan → frontend Web3.py → demo. Không vừa code vừa thử trực tiếp trên Sepolia.</li>
 <li><strong>4.3 Giải thích contract</strong> từng hàm (rubric 1), kèm <strong>một mục riêng &quot;Kỹ thuật thực hiện ràng buộc&quot;</strong> (rubric 1 yêu cầu trình bày). Với mỗi ràng buộc nêu: mục đích; đoạn code <code>require</code>/<code>hasRole</code>; vì sao đặt ở hàm đó; ca test chứng minh (thành công khi hợp lệ, revert khi vi phạm). Dùng cùng nội dung cho một slide.</li>
 <li><strong>4.4 IPFS:</strong> upload + retrieve 3 loại file.</li>
@@ -322,7 +322,7 @@ Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
 <ul>
 <li><em>Issuer:</em> yêu cầu chờ duyệt, issue, revoke, mint SBT</li>
 <li><em>User:</em> tạo khóa/DID, upload, xem credential, consent, xem SBT</li>
-<li><em>Verifier:</em> nhập DID, verify, retrieve (nếu có consent), thử <code>GatedService</code></li>
+<li><em>Verifier:</em> nhập DID, verify; kiểm tra consent, retrieve và giải mã nếu có quyền. Verifier không gọi <code>GatedService</code> trong MVP.</li>
 </ul>
 </li>
 </ul>
@@ -387,7 +387,7 @@ Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
 </tbody>
 </table>
 </div>
-<p>Chạy trên Sepolia, lưu hash giao dịch và liên kết Etherscan làm minh chứng. Unit test hợp đồng (pytest + Web3.py trên chain local) là bắt buộc; gas report là tùy chọn. Chuẩn bị demo (rubric: tối đa 1 lỗi giao dịch): nạp sẵn test ETH cho mọi vai trò (faucet có hạn mức ngày), chờ receipt từng giao dịch trong Web3.py, quay video dự phòng có caption. Các ca revert ở bảng trên kiểm thử trong unit test; khi demo trực tiếp chỉ chạy dạng mô phỏng (<code>.call()</code> hoặc ước lượng gas) và để giao diện bắt <code>ContractLogicError</code> hiện &quot;Từ chối theo thiết kế&quot;, không gửi giao dịch lỗi lên Sepolia.</p>
+<p>Khi triển khai Sepolia trong giai đoạn nghiệm thu, lưu hash giao dịch và liên kết Etherscan làm minh chứng; hiện chưa có bằng chứng Sepolia để tuyên bố thành công. Hardhat/TypeScript kiểm thử Solidity contract và deployment workflow (mốc M1: 39 tests passing); pytest kiểm thử Python unit (mốc M1: 66 tests passing); Web3.py integration kiểm thử Python với chain local (mốc M1: 1 test passing khi node đáp ứng yêu cầu). Gas report là tùy chọn. Chuẩn bị demo (rubric: tối đa 1 lỗi giao dịch): nạp sẵn test ETH cho mọi vai trò, chờ receipt từng giao dịch trong Web3.py, quay video dự phòng có caption. Các ca revert ở bảng trên kiểm thử local; khi demo trực tiếp chỉ chạy dạng mô phỏng (<code>.call()</code> hoặc ước lượng gas) và để giao diện bắt <code>ContractLogicError</code> hiện &quot;Từ chối theo thiết kế&quot;, không gửi giao dịch lỗi lên Sepolia.</p>
 <p><strong>Câu nói chuẩn khi demo và phản biện về consent:</strong> &quot;Thu hồi consent ngăn hệ thống cấp và truy xuất quyền trong các lần truy cập tiếp theo. Dữ liệu hoặc khóa mà Verifier đã nhận hợp lệ trước khi thu hồi không thể bị blockchain thu hồi khỏi máy của họ.&quot; Không nói &quot;Verifier không thể đọc file nữa&quot;.</p>
 <hr>
 <h2>CHƯƠNG 6. BẢO MẬT VÀ QUYỀN RIÊNG TƯ (ngắn hơn chương 4)</h2>
@@ -395,7 +395,7 @@ Verifier: lấy wrapped k (cần consent) → RSA giải k → AES giải file
 <h2>CHƯƠNG 7. ĐÁNH GIÁ VÀ HẠN CHẾ</h2>
 <p>Đánh giá theo: phi tập trung, toàn vẹn, riêng tư, kiểm soát, xác minh, thu hồi, chứng nhận. <strong>Hạn chế</strong> (mỗi ý một hai câu):</p>
 <ul>
-<li>Thu hồi consent chỉ xóa khóa bọc khỏi trạng thái contract và chặn truy xuất về sau; khóa bọc vẫn nằm trong lịch sử giao dịch và dữ liệu Verifier đã nhận hợp lệ không thể thu hồi. Muốn thu hồi thật phải mã hóa lại bằng khóa AES mới và upload CID mới (hướng phát triển)</li>
+<li>Thu hồi consent chỉ tắt trạng thái truy cập hiện hành (không xóa wrapped key đã lưu/lịch sử chain) và chặn luồng ứng dụng về sau; dữ liệu Verifier đã nhận hợp lệ không thể thu hồi. Muốn thu hồi thật phải mã hóa lại bằng khóa AES mới và upload CID mới (hướng phát triển)</li>
 <li>Consent công khai trên chain</li>
 <li>Mất khóa RSA là mất dữ liệu; contract không đổi được sau deploy; cần pinning IPFS; Issuer là điểm tin cậy</li>
 <li>Chưa xét replay chữ ký, front-running; chưa theo W3C VC đầy đủ</li>

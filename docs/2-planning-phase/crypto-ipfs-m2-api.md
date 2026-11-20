@@ -30,7 +30,7 @@ Module `crypto.crypto_utils`:
 | `encrypt_package(plaintext, key, associated_data=b"ssi-demo-v1")` | `EncryptedPackage` | Same key validation; call `.pack()` before upload. Keep AAD default. |
 | `EncryptedPackage.unpack(payload)` | `EncryptedPackage` | `EncryptedPackageError` for wrong type or fewer than 28 bytes. Structural parsing alone does not authenticate ciphertext. |
 | `decrypt_package(package, key, associated_data=b"ssi-demo-v1")` | Plaintext bytes | `EncryptedPackageError` for invalid package/version/algorithm/nonce/tag/AAD or GCM authentication failure. |
-| `wrap_key(aes_key, public_pem)` | Raw RSA ciphertext bytes | `ValueError` for invalid AES length, malformed/non-RSA public PEM; current core accepts imported RSA-2048 too. Validate the FROZEN RSA-3072 constraint at integration; do not silently adopt another key size. |
+| `wrap_key(aes_key, public_pem)` | Raw RSA ciphertext bytes | `ValueError` for invalid AES length or malformed/non-RSA public PEM. The low-level primitive can parse an imported RSA-2048 key, but this is not an SSI workflow configuration: role-key generation, loading and on-chain registration require RSA-3072. Do not silently adopt another key size. |
 | `wrap_key_for_roles(aes_key, holder_public_pem, issuer_public_pem)` | `(wrappedKeyForHolder, wrappedKeyForIssuer)` | Same AES key wrapped independently for each public key; same errors as `wrap_key`. |
 | `unwrap_key(wrapped_key, private_pem, password)` | AES key, 32 bytes | `ValueError` for empty/invalid wrapped key, empty/wrong password, invalid/non-RSA private PEM, wrong RSA key, OAEP failure or recovered AES length mismatch. Invalid Python argument types can also raise `TypeError`. |
 | `sha256_bytes(data)` | Digest bytes, length 32 | Caller compares against credential `docHash`; helper does not fetch chain state or reject a mismatched hash automatically. |
@@ -81,7 +81,7 @@ The milestone does not silently turn these into a new API contract.
   This is application policy, not a restriction imposed by Kubo or crypto helpers.
 - Historical wrapped keys and already disclosed plaintext/AES keys cannot be
   cryptographically revoked by toggling consent. Do not claim otherwise.
-- No registry/key-registration workflow is implemented. DL-05 remains PROPOSED.
+- Registration is handled by the role-key/web3 integration, not these pure crypto helpers: it validates the RSA-3072 pair, registers only once and reads the on-chain public key back for fingerprint comparison. DL-05 is APPROVED; no rotation/rewrap workflow exists.
 
 ## Evidence references
 

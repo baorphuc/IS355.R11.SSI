@@ -19,7 +19,7 @@
 </p>
 
 > [!IMPORTANT]
-> Đây là **skeleton MVP phục vụ học tập**, chưa phải hệ thống SSI/Verifiable Credential hoàn chỉnh. Các dashboard hiện là scaffold; IPFS end-to-end và Sepolia vẫn cần nhóm tiếp tục triển khai, kiểm thử và lưu bằng chứng thật.
+> Đây là **MVP phục vụ học tập**, chưa phải hệ thống SSI/Verifiable Credential hoàn chỉnh. Luồng local Holder/Issuer/Verifier, mã hóa/IPFS và dashboard đã có implementation/test tương ứng; Sepolia và bằng chứng nghiệm thu cuối vẫn chưa được tuyên bố hoàn thành.
 
 ---
 
@@ -44,10 +44,10 @@ Repository xây dựng nền tảng tối thiểu cho đồ án **Blockchain SSI
 
 - **Holder** đăng ký DID mô phỏng và yêu cầu cấp credential.
 - **Issuer** kiểm tra hồ sơ, ký và phát hành credential.
-- **Verifier** xác minh trạng thái công khai và kiểm tra quyền truy cập.
+- **Verifier** xác minh trạng thái công khai; khi Holder đã cấp consent, Verifier kiểm tra `hasAccess`, rồi tải và giải mã hồ sơ.
 - Hồ sơ nhạy cảm được mã hóa ngoài chuỗi; blockchain chỉ lưu hash, CID, chữ ký và trạng thái cần thiết.
 - `IdentitySBT` biểu diễn credential không chuyển nhượng.
-- `GatedService` minh họa dịch vụ chỉ cho Holder có credential hợp lệ truy cập.
+- `GatedService` minh họa dịch vụ chỉ cho Holder sở hữu SBT và có credential hợp lệ truy cập; Gate không kiểm tra consent của Verifier.
 
 Thiết kế bám theo bốn tài liệu đã thống nhất: outline SSI bản 3, Project Charter, architecture mới nhất và WBS 5 Phase. Nếu có điểm không nhất quán, repository ưu tiên architecture mới nhất.
 
@@ -59,23 +59,23 @@ Giao diện tích hợp giữa bốn mảng đã được khóa tại [`docs/2-p
 
 | Hạng mục | Trạng thái | Ghi chú |
 |---|:---:|---|
-| Ba smart contract | ✅ | Compile và có test lõi |
+| Ba smart contract | ✅ | Hardening M1 và test Hardhat hiện có |
 | Vòng đời `REQUESTED → ISSUED → REVOKED` | ✅ | Đã test bằng Hardhat |
 | Identity SBT không chuyển nhượng | ✅ | Mint/burn và chặn transfer |
 | Token-gated service | ✅ | `accessService(credentialId)` phát event |
 | AES-GCM và RSA-OAEP | ✅ | Primitive và unit test đã có |
 | Web3.py kết nối Hardhat local | ✅ | Có integration test |
 | IPFS Kubo client | ✅ | Đã kiểm thử Kubo thật (0.43.1): upload/retrieve 3 file .enc, byte-for-byte khớp, docHash matches, RSA-OAEP wrap/unwrap trong luồng thực. Xem `evidence/member_b_kubo_e2e.md`. |
-| Ba dashboard Streamlit | 🟡 | Hiển thị scaffold; nút ghi chain đang là TODO(C) |
+| Ba dashboard Streamlit | ✅ | Holder, Issuer, Verifier thực thi được trong môi trường sạch local; không thay cho evidence Sepolia |
 | Deploy Sepolia | ⬜ | Chưa chạy và chưa có tx hash thật |
 | Báo cáo/slide/video nghiệm thu | ⬜ | Nhóm tiếp tục thực hiện theo WBS |
 
-Kết quả kiểm thử gần nhất của skeleton:
+Mốc regression M1 gần nhất (local/isolated environment):
 
 ```text
-Hardhat contracts     2 passed
-Python crypto unit    2 passed
-Web3.py integration   1 passed (khi Hardhat local đang chạy)
+Hardhat/TypeScript    39 tests passing (Solidity contract và deployment workflow)
+pytest Python unit    66 tests passing (crypto, key lifecycle và helper Python)
+Web3.py integration   1 test passing (Python với blockchain local khi node đáp ứng yêu cầu)
 ```
 
 Quy ước trạng thái credential:
@@ -104,13 +104,14 @@ flowchart LR
 
 ### Các nguyên tắc đã khóa
 
-- `credentialId` do Registry sinh tăng dần từ `1`.
+- Mỗi ví đăng ký đúng một DID. Một DID có thể có nhiều Credential. Mỗi lần gọi `requestCredential()` hợp lệ, Registry sinh một `credentialId` mới. ID tăng dần từ `1`.
 - `requestCredential` chứa `wrappedKeyForHolder` và `wrappedKeyForIssuer`.
 - `tokenId` của SBT bằng `credentialId`.
 - `docHash` là SHA-256 của file PDF bản rõ trước mã hóa.
 - Mỗi hồ sơ dùng một AES-256 key; mỗi file có nonce 12 byte riêng.
-- AES key được wrap độc lập bằng RSA-OAEP SHA-256 cho từng vai trò.
-- Issuer ký digest bằng EIP-191; digest bao gồm contract, chain ID, credential ID, Holder và `docHash`.
+- AES key được wrap độc lập bằng RSA-3072/OAEP SHA-256 cho từng vai trò; public key là PEM SPKI và fingerprint là SHA-256 của DER SubjectPublicKeyInfo.
+- Private PEM không lên chain. Public key chỉ đăng ký một lần trong MVP; phải backup private PEM và kiểm tra fingerprint trước khi đăng ký, vì không có rotation/rewrap.
+- Issuer tạo `digest = keccak256(abi.encode(registryAddress, chainId, credentialId, holderAddress, docHash))`, sau đó áp dụng EIP-191 `personal_sign` trên đúng 32 byte digest thô; không ký chuỗi hex hoặc JSON.
 - Contract không giải mã dữ liệu; crypto và IPFS được xử lý bằng Python.
 
 Chi tiết đầy đủ nằm trong [`architecture.md`](docs/2-planning-phase/architecture.md) và [`interfaces.md`](docs/2-planning-phase/interfaces.md).
@@ -125,7 +126,7 @@ Chi tiết đầy đủ nằm trong [`architecture.md`](docs/2-planning-phase/ar
 | Phát triển blockchain | Hardhat, TypeScript, Ethers.js |
 | Blockchain local/testnet | Hardhat Network, Ethereum Sepolia |
 | Backend adapter | Python, Web3.py, eth-account |
-| Mã hóa | cryptography: AES-256-GCM, RSA-OAEP SHA-256 |
+| Mã hóa | cryptography: AES-256-GCM, RSA-3072/OAEP SHA-256 |
 | Lưu trữ ngoài chuỗi | IPFS Kubo HTTP API |
 | Giao diện | Streamlit — Holder, Issuer, Verifier |
 | Kiểm thử | Hardhat/Chai, pytest + Web3.py |
@@ -177,7 +178,7 @@ python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Chỉ điền private key của account Hardhat local hoặc ví Sepolia dành riêng cho đồ án. Không sử dụng ví chứa tài sản thật.
+`requirements.txt` bao gồm `python-dotenv` và các dependency fixture của dashboard. Chỉ điền private key của account Hardhat local hoặc ví Sepolia dành riêng cho đồ án. Không sử dụng ví chứa tài sản thật.
 
 ---
 
@@ -213,24 +214,33 @@ Integration test sẽ `skip` có giải thích nếu artifact chưa được com
 Giữ Hardhat node đang chạy, sau đó mở terminal khác:
 
 ```powershell
+# Dùng ID mới cho mỗi deployment có chủ đích; không tái dùng manifest cũ.
+$env:SSI_DEPLOYMENT_ID = "local-demo-001"
 npm run deploy:local
+
+# Chép 3 địa chỉ từ manifest vào .env: IDENTITY_SBT_ADDRESS,
+# SSI_REGISTRY_ADDRESS, GATED_SERVICE_ADDRESS; rồi đặt ISSUER_ADDRESS.
 npm run roles:local
+
+# Helper chỉ kiểm tra Gate đã được deploy/link đúng, không deploy Gate thứ hai.
+npx hardhat run scripts/deploy-gated-service.ts --network localhost
 ```
 
-Script deploy ghi địa chỉ vào `deployments/localhost.json`. File deployment thật bị Git ignore để tránh dùng nhầm môi trường.
+Quy trình deploy theo thứ tự `IdentitySBT → SSIRegistry → setRegistry → GatedService`.
+Script kiểm tra chain ID, signer, bytecode, liên kết contract và role trước khi ghi manifest.
+Manifest có deployment ID, transaction/block hash và genesis hash; script từ chối ghi đè manifest mặc định. Không sửa hoặc tái dùng manifest của chain khác.
 
 ### 7.4 Chạy ba dashboard
 
 Chạy mỗi dashboard ở một terminal riêng:
 
 ```powershell
-streamlit run app\holder.py
-streamlit run app\issuer.py
-streamlit run app\verifier.py
+python -m streamlit run app\holder.py --server.port 8501
+python -m streamlit run app\issuer.py --server.port 8502
+python -m streamlit run app\verifier.py --server.port 8503
 ```
 
-> [!NOTE]
-> Dashboard hiện là scaffold trung thực: có kết nối và form nhưng các nút gửi giao dịch đang bị vô hiệu hóa cho tới khi thành viên C nối ABI, ví demo và luồng của B.
+Trước khi dùng dashboard, `.env` phải có RPC, ba địa chỉ contract từ manifest và password RSA theo role. Dashboard tạo/kiểm tra key pair theo role, chỉ cho đăng ký public key khi người vận hành đã xác nhận backup private PEM và fingerprint. Không dán PEM, password hoặc private key vào giao diện/log.
 
 ### 7.5 IPFS Kubo
 
@@ -250,7 +260,7 @@ from crypto.crypto_utils import (
 )
 from ipfs.kubo_client import KuboClient
 
-# 1. Sinh khóa AES-256 cho gói hồ sơ và cặp RSA Holder/Issuer
+# 1. Sinh khóa AES-256 cho gói hồ sơ và cặp RSA-3072 Holder/Issuer
 aes_key = new_aes_key()
 holder_priv, holder_pub = generate_rsa_keypair("mat-khau-pem")
 issuer_priv, issuer_pub = generate_rsa_keypair("mat-khau-pem")
@@ -283,13 +293,24 @@ assert sha256_bytes(plaintext) == doc_hash  # nếu là diploma.pdf
 - AES key phải đúng 32 byte. RSA-OAEP dùng MGF1-SHA256, SHA256 và `label=None`;
   wrapped key là raw RSA ciphertext bytes, không base64.
 - Không upload dữ liệu thô, khóa riêng RSA hoặc mật khẩu lên IPFS/Git.
-- Test IPFS dùng giả Kubo (mock); chạy kiểm thử thật cần `ipfs daemon` tại `127.0.0.1:5001`.
+- Unit test IPFS dùng giả Kubo (mock); evidence M2 đã có kiểm thử Kubo thật. Muốn tái lập kiểm thử thật cần `ipfs daemon` tại `127.0.0.1:5001`.
+
+Tạo PEM theo luồng ứng dụng bằng script an toàn (script từ chối ghi đè cặp khóa đã có):
+
+```powershell
+python scripts\generate_rsa_keys.py --create holder
+python scripts\generate_rsa_keys.py --create issuer
+python scripts\generate_rsa_keys.py --create verifier
+```
+
+Mỗi lệnh cần biến password RSA cùng tên role trong `.env`. Script và dashboard kiểm tra public/private pair, dùng PEM SPKI cho public key và fingerprint SHA-256 của DER SPKI. Sau khi `registerKey` thành công, ứng dụng đọc lại public key on-chain để đối chiếu fingerprint; key không thể thay đổi trong MVP.
 
 ### 7.6 Sepolia
 
 Điền `SEPOLIA_RPC_URL` và `DEPLOYER_PRIVATE_KEY` vào `.env`, sau đó:
 
 ```powershell
+$env:SSI_DEPLOYMENT_ID = "sepolia-demo-001"
 npm run deploy:sepolia
 npm run roles:sepolia
 ```

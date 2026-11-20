@@ -3,15 +3,20 @@
 Nguồn ưu tiên: `architecture.md` mới nhất. Khi outline/WBS khác architecture, skeleton dùng:
 
 - `CredentialStatus`: `NONE=0`, `REQUESTED=1`, `ISSUED=2`, `REVOKED=3`.
-- `credentialId` do `SSIRegistry` sinh tăng dần, bắt đầu từ 1.
+- Mỗi ví đăng ký đúng một DID. Một DID có thể có nhiều Credential. Mỗi lần gọi `requestCredential()` hợp lệ, Registry sinh một `credentialId` mới. ID tăng dần từ 1.
 - `requestCredential` nhận ba CID ciphertext, `wrappedKeyForHolder` và `wrappedKeyForIssuer`.
-- Digest Issuer: `keccak256(abi.encode(registry, chainId, credentialId, holder, docHash))`, sau đó ký EIP-191.
-- `IdentitySBT.tokenId == credentialId`; chỉ Registry mint/burn; transfer bị chặn.
-- `GatedService.accessService(uint256 credentialId)` là transaction và phát `ServiceAccessed`.
+- Digest Issuer: tạo đúng `keccak256(abi.encode(registryAddress, chainId, credentialId, holderAddress, docHash))`, sau đó áp dụng EIP-191 `personal_sign` trên 32 byte digest thô (không ký chuỗi hex/JSON).
+- `IdentitySBT.tokenId == credentialId`; chỉ Registry đã bind một lần mới mint/burn; transfer bị chặn.
+- `hasAccess(credentialId, verifier)` biểu diễn consent đang hiệu lực cho Verifier đó; đây là điều kiện để ứng dụng hỗ trợ Verifier truy xuất/giải mã dữ liệu, không phải điều kiện Gate kiểm tra trực tiếp.
+- `GatedService.accessService(uint256 credentialId)` là transaction và phát `ServiceAccessed`; chỉ ví đang sở hữu SBT `tokenId == credentialId` và là Holder của Credential `ISSUED` gọi được. Verifier không gọi Gate trong MVP.
 
 ## Những gì đã implement thật
 
-Vòng đời credential, `ISSUER_ROLE`, chữ ký EIP-191, mint/burn SBT, chặn transfer, consent hiện hành và gate/event.
+Vòng đời credential, `ISSUER_ROLE`, chữ ký EIP-191, mint/burn SBT, chặn transfer, consent hiện hành và gate/event. Mint/revoke yêu cầu caller vừa có `ISSUER_ROLE` hiện tại vừa là original Issuer lưu trên credential. Sau revoke, SBT tương ứng bị burn và Gate từ chối truy cập.
+
+`registerKey(bytes)` chỉ cho phép public RSA key đầu tiên của ví. Key này bất biến trong MVP; contract không lưu private PEM, key version hoặc lịch sử rewrap. Holder chỉ grant/revoke consent khi credential đã issued; revoke chỉ tắt consent hiện hành, không thể xóa bytes đã xuất hiện trong lịch sử chain.
+
+`IdentitySBT.setRegistry` chỉ bind một Registry. Không hỗ trợ thay Registry hoặc cấp Registry thứ hai trong MVP; cấu hình sai cần deployment mới. Các policy trên giữ nguyên chữ ký ABI FROZEN v1.
 
 ## Giới hạn có chủ ý
 
