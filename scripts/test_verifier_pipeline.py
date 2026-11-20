@@ -1,3 +1,4 @@
+from web3_client.role_keys import verified_pair
 
 import os
 from pathlib import Path
@@ -39,9 +40,6 @@ verifier_address = Web3.to_checksum_address(
 verifier_password = required_env("VERIFIER_RSA_PASSWORD")
 registry_address = required_env("SSI_REGISTRY_ADDRESS")
 
-verifier_private_pem = (
-    ROOT / "keys" / "verifier_private.pem"
-).read_bytes()
 
 
 # --------------------------------------------------
@@ -69,6 +67,8 @@ registry = client.load_contract(
     registry_address,
     artifact,
 )
+verifier_private_pem, verifier_public_pem = verified_pair(registry, verifier_address, ROOT / "keys", "verifier", required_env("VERIFIER_RSA_PASSWORD"))
+
 
 print("Chain ID:", client.w3.eth.chain_id)
 print("Registry:", registry.address)

@@ -13,7 +13,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: { chainId: 31337 },
-    localhost: { url: process.env.LOCAL_RPC_URL ?? "http://127.0.0.1:8545" },
+    localhost: { chainId: 31337, url: process.env.LOCAL_RPC_URL ?? "http://127.0.0.1:8545" },
     ...(sepoliaUrl && deployerKey
       ? { sepolia: { url: sepoliaUrl, accounts: [deployerKey], chainId: 11155111 } }
       : {}),

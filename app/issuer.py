@@ -6,7 +6,7 @@ from eth_account import Account
 from eth_account.messages import encode_defunct
 from web3 import Web3
 
-from app.common import ROOT, page_header, contract_address
+from app.common import ROOT, page_header, contract_address, role_key_panel
 from crypto.crypto_utils import (
     unwrap_key,
     decrypt_bytes,
@@ -90,6 +90,8 @@ except Exception as error:
     st.error(f"Không thể tải Smart Contract: {error}")
     st.stop()
 
+
+issuer_private_pem, issuer_public_pem = role_key_panel(client, registry, "issuer", issuer_address)
 
 # ==================================================
 # 3. CHECK ISSUER ROLE
@@ -216,15 +218,6 @@ if status == 1:
 
             if len(wrapped_key_for_issuer) != 384:
                 raise ValueError("Wrapped key không đúng 384 bytes.")
-
-            private_pem_path = ROOT / "keys" / "issuer_private.pem"
-
-            if not private_pem_path.is_file():
-                raise FileNotFoundError(
-                    "Không tìm thấy keys/issuer_private.pem"
-                )
-
-            issuer_private_pem = private_pem_path.read_bytes()
 
             with st.spinner("Đang giải mã RSA-3072..."):
 

@@ -63,6 +63,11 @@ contract SSIRegistry is AccessControl {
 
     function registerKey(bytes calldata rsaPublicKey) external {
         require(rsaPublicKey.length > 0, "empty key");
+        require(
+            identities[msg.sender].rsaPublicKey.length == 0,
+            "key already registered"
+    );
+
         identities[msg.sender].rsaPublicKey = rsaPublicKey;
         emit KeyRegistered(msg.sender);
     }
@@ -121,7 +126,7 @@ contract SSIRegistry is AccessControl {
         emit CredentialIssued(credentialId, msg.sender, docHash);
     }
 
-    function mintSBT(uint256 credentialId) external {
+    function mintSBT(uint256 credentialId) external onlyRole(ISSUER_ROLE) {
         Credential storage c = _credentials[credentialId];
         require(c.status == CredentialStatus.ISSUED, "not issued");
         require(c.issuer == msg.sender, "not credential issuer");
@@ -131,7 +136,7 @@ contract SSIRegistry is AccessControl {
         emit SBTMinted(credentialId, c.holder);
     }
 
-    function revokeCredential(uint256 credentialId) external {
+    function revokeCredential(uint256 credentialId) external onlyRole(ISSUER_ROLE) {
         Credential storage c = _credentials[credentialId];
         require(c.status == CredentialStatus.ISSUED, "not issued");
         require(c.issuer == msg.sender, "not credential issuer");

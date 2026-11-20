@@ -1,8 +1,9 @@
-# RSA encrypted PEM backup / fingerprint preparation
+# RSA encrypted PEM backup / fingerprint policy
 
-Status: PREPARATION ONLY. DL-05 is PROPOSED, not approved. This document neither
-registers a key nor makes public keys immutable. No rotation/versioning/rewrap
-workflow has been implemented. Do not perform on-chain registration on its basis.
+Status: **DL-05 APPROVED BY PROJECT OWNER — 18/11/2026**. MVP uses one immutable
+RSA-3072 public key per wallet after `registerKey`. No rotation, versioning or
+rewrap workflow exists. This document describes operator safeguards; it does not
+make a backup for the operator or place any private PEM on-chain.
 
 ## Fingerprint convention for PM/Chat 03 review
 
@@ -24,7 +25,7 @@ def public_fingerprint(public_pem: bytes) -> str:
     return sha256_bytes(der).hex()
 ```
 
-## Proposed local backup checklist
+## Local backup checklist
 
 1. Keep Holder/Issuer/Verifier RSA pairs separate from each other and from
    Ethereum wallet keys. Never put a wallet secret into a PEM field.
@@ -46,12 +47,15 @@ def public_fingerprint(public_pem: bytes) -> str:
 
 The M2 automated test verifies encrypted PEM load and public fingerprint equality
 using in-memory disposable keys only; it does not prove a user's backup/storage
-or recovery process and does not implement registration.
+or recovery process. The implemented registration flow loads the local pair,
+checks its fingerprint, registers only if no key exists on-chain, then reads the
+on-chain value back and compares the fingerprint.
 
-## Dependency requiring PM approval
+## Approved limitation and operator responsibility
 
-DL-05: confirm or reject the proposed immutable public-key / no-rotation policy,
-with A/B agreement and C/D UX/test review. Until then, one-time registration guards,
-update prevention and any UI registration flow stay deferred. The public
-fingerprint display convention and local backup custodian/destination are also
-awaiting integration review. This dependency does not block fixture/Kubo tests.
+The immutable-key policy is an MVP scope decision, not a recovery mechanism. The
+operator must retain the encrypted private PEM and its password before on-chain
+registration. If the private key is lost, ciphertext wrapped to that public key
+cannot be recovered by a password reset or contract transaction. Backup
+custodian/destination remains an operator responsibility and must not be committed
+to this repository.

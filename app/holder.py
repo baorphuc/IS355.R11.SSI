@@ -1,10 +1,11 @@
+from web3_client.role_keys import verify_public
 from web3 import Web3
 import os
 
 import streamlit as st
 from eth_account import Account
 
-from app.common import ROOT, page_header, contract_address
+from app.common import ROOT, page_header, contract_address, role_key_panel
 from crypto.crypto_utils import (
     new_aes_key,
     encrypt_bytes,
@@ -67,6 +68,8 @@ except Exception as error:
     st.error(f"Không thể kết nối SSIRegistry: {error}")
     st.stop()
 
+
+holder_private_pem, holder_public_pem = role_key_panel(client, registry, "holder", holder_address)
 
 # ==================================================
 # 3. HOLDER INFORMATION
@@ -209,12 +212,10 @@ if st.button("Mã hóa và gửi yêu cầu Credential", type="primary"):
     # Load RSA public keys
     # ----------------------------------------------
 
-    holder_public_path = ROOT / "keys" / "holder_public.pem"
     issuer_public_path = ROOT / "keys" / "issuer_public.pem"
 
     try:
-        holder_public_pem = holder_public_path.read_bytes()
-        issuer_public_pem = issuer_public_path.read_bytes()
+        issuer_public_pem = verify_public(registry, contract_address("ISSUER_ADDRESS"), issuer_public_path.read_bytes())
 
         # ------------------------------------------
         # Generate AES key and encrypt files
@@ -443,13 +444,9 @@ else:
 
                 if st.button("Grant Consent", type="primary"):
                     try:
-                        holder_private_pem = (
-                            ROOT / "keys" / "holder_private.pem"
-                        ).read_bytes()
-
-                        verifier_public_pem = (
-                            ROOT / "keys" / "verifier_public.pem"
-                        ).read_bytes()
+                        verifier_public_pem = verify_public(
+                            registry, verifier_address, (ROOT / "keys" / "verifier_public.pem").read_bytes()
+                        )
 
                         wrapped_holder_key = bytes(
                             consent_credential[5]

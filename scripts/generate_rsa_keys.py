@@ -1,35 +1,26 @@
-
-import sys
+import argparse
 from pathlib import Path
-from dotenv import dotenv_values
+import sys
 
-# Đưa thư mục gốc dự án vào Python import path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from crypto.crypto_utils import generate_rsa_keypair, save_private_pem
+from dotenv import dotenv_values
+from crypto.role_keys import ROLES, create_pair
 
-KEYS_DIR = ROOT / "keys"
-ENV = dotenv_values(ROOT / ".env")
 
-KEYS_DIR.mkdir(exist_ok=True)
-
-ROLES = {
-    "holder": "HOLDER_RSA_PASSWORD",
-    "issuer": "ISSUER_RSA_PASSWORD",
-}
-
-for role, env_name in ROLES.items():
-    password = ENV.get(env_name)
-
+def main():
+    parser = argparse.ArgumentParser(description="Create one new role key pair; existing PEMs are protected.")
+    parser.add_argument("--create", choices=ROLES, required=True)
+    role = parser.parse_args().create
+    password = dotenv_values(ROOT / ".env").get(role.upper() + "_RSA_PASSWORD")
     if not password:
-        raise ValueError(f"Thiếu {env_name} trong .env")
+        parser.error("Missing RSA password for selected role")
+    try:
+        print(role, create_pair(ROOT / "keys", role, password))
+    except (OSError, ValueError) as error:
+        parser.exit(1, f"{error}\n")
 
-    private_pem, public_pem = generate_rsa_keypair(password)
 
-    save_private_pem(KEYS_DIR / f"{role}_private.pem", private_pem)
-    (KEYS_DIR / f"{role}_public.pem").write_bytes(public_pem)
-
-    print(f"{role.capitalize()} RSA keypair generated successfully")
-
-print("RSA key generation completed.")
+if __name__ == "__main__":
+    main()

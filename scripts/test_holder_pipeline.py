@@ -1,3 +1,4 @@
+from web3_client.role_keys import verified_pair, verify_public
 
 import os
 from pathlib import Path
@@ -72,6 +73,9 @@ registry = client.load_contract(
     registry_address,
     artifact,
 )
+holder_private_pem, holder_public_pem = verified_pair(registry, holder_address, ROOT / "keys", "holder", required_env("HOLDER_RSA_PASSWORD"))
+issuer_public_pem = verify_public(registry, issuer_address, (ROOT / "keys" / "issuer_public.pem").read_bytes())
+
 
 print("SSIRegistry connected:", registry.address)
 
@@ -164,13 +168,7 @@ for name, encrypted in encrypted_files.items():
 
 print("\n[5/7] Wrapping AES key with RSA-3072...")
 
-holder_public_pem = (
-    ROOT / "keys" / "holder_public.pem"
-).read_bytes()
 
-issuer_public_pem = (
-    ROOT / "keys" / "issuer_public.pem"
-).read_bytes()
 
 wrapped_holder, wrapped_issuer = wrap_key_for_roles(
     aes_key,

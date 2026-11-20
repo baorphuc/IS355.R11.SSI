@@ -16,6 +16,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.10.2",
     "chai": "^4.5.0",
     "dotenv": "^16.4.7",

@@ -3,7 +3,7 @@ import os
 import streamlit as st
 from web3 import Web3
 
-from app.common import ROOT, page_header, contract_address
+from app.common import ROOT, page_header, contract_address, role_key_panel
 from crypto.crypto_utils import unwrap_key, decrypt_bytes, sha256_bytes
 from ipfs.kubo_client import KuboClient
 
@@ -61,6 +61,8 @@ except Exception as error:
     st.error(f"Không thể khởi tạo Registry/IPFS: {error}")
     st.stop()
 
+
+verifier_private_pem, verifier_public_pem = role_key_panel(client, registry, "verifier", verifier_address)
 
 # ==================================================
 # 3. VERIFIER INFORMATION
@@ -262,19 +264,6 @@ if credential is not None:
                 )
 
             # 3. Đọc RSA private key của Verifier
-            verifier_private_path = (
-                ROOT / "keys" / "verifier_private.pem"
-            )
-
-            if not verifier_private_path.exists():
-                raise FileNotFoundError(
-                    "Không tìm thấy keys/verifier_private.pem"
-                )
-
-            verifier_private_pem = (
-                verifier_private_path.read_bytes()
-            )
-
             # 4. RSA unwrap AES key
             aes_key = unwrap_key(
                 bytes(wrapped_verifier_key),

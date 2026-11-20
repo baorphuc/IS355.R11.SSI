@@ -1,3 +1,4 @@
+from web3_client.role_keys import verified_pair, verify_public
 
 import os
 from pathlib import Path
@@ -41,6 +42,9 @@ registry = client.load_contract(
     required_env("SSI_REGISTRY_ADDRESS"),
     registry_artifact
 )
+holder_private_pem, holder_public_pem = verified_pair(registry, holder_address, ROOT / "keys", "holder", required_env("HOLDER_RSA_PASSWORD"))
+verifier_public_pem = verify_public(registry, verifier_address, (ROOT / "keys" / "verifier_public.pem").read_bytes())
+
 
 print("Chain ID:", client.w3.eth.chain_id)
 print("Holder:", holder_address)
@@ -67,9 +71,6 @@ print("SBT minted:", credential[12])
 print("\n[3/5] Recovering AES key for Holder...")
 
 holder_password = required_env("HOLDER_RSA_PASSWORD")
-holder_private_pem = (
-    ROOT / "keys" / "holder_private.pem"
-).read_bytes()
 
 wrapped_holder_key = bytes(credential[5])
 
@@ -90,9 +91,6 @@ print("AES key recovered: PASS")
 
 print("\n[4/5] Wrapping AES key for Verifier...")
 
-verifier_public_pem = (
-    ROOT / "keys" / "verifier_public.pem"
-).read_bytes()
 
 wrapped_verifier_key = wrap_key(
     aes_key,

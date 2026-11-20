@@ -94,7 +94,7 @@ Blockchain không tự chứng minh nội dung giấy tờ là đúng trong th�
 |:---|:---|
 | **SSIRegistry (Solidity)** | Đăng ký khóa công khai, tạo DID mô phỏng `did:ssi:0x…`, yêu cầu cấp chứng chỉ, phát hành/xác minh/thu hồi, quản lý consent, lưu hash/CID/chữ ký và trạng thái. |
 | **IdentitySBT + GatedService** | ERC-721 không chuyển nhượng, `tokenId = credentialId`; mint/burn theo Registry; dịch vụ kiểm tra SBT và Credential còn hợp lệ. |
-| **Ứng dụng 3 vai trò** | Holder Dashboard (tạo DID, upload, xem hồ sơ/consent); Issuer Dashboard (kiểm tra, cấp, thu hồi, mint SBT); Verifier Dashboard (xác minh, tải và giải mã nếu có consent, thử dịch vụ). |
+| **Ứng dụng 3 vai trò** | Holder Dashboard (tạo DID, upload, xem hồ sơ/consent và gọi token-gated service khi sở hữu SBT hợp lệ); Issuer Dashboard (kiểm tra, cấp, thu hồi, mint SBT); Verifier Dashboard (xác minh, kiểm tra consent, tải và giải mã nếu có quyền; không gọi GatedService trong MVP). |
 | **Crypto & key management** | Phân biệt private key ví với RSA; PEM RSA mã hóa mật khẩu; AES-GCM dùng nonce khác nhau cho mỗi file; Holder bọc AES key cho mình và bên được cấp quyền. |
 | **Lưu trữ IPFS** | Kubo HTTP API; mã hóa trước upload; lưu/tải 3 loại file; lấy CID và xác minh SHA-256 file gốc. |
 | **Môi trường & thử nghiệm** | Hardhat local node để kiểm thử; Web3.py, pytest; test Ethereum Sepolia và minh chứng bằng transaction hash/explorer. |

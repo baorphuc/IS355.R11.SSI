@@ -106,7 +106,7 @@ flowchart TB
 |:---|:---|:---|:---|
 | **Holder** | Chủ ví và định danh | User Dashboard | Tạo DID, upload file mã hóa, gửi yêu cầu cấp, grant/revoke consent, xem Credential/SBT. |
 | **Issuer** | Đơn vị cấp đáng tin cậy | Issuer Dashboard | Xem yêu cầu đã gửi, kiểm tra tài liệu được cung cấp khóa, ký EIP-191, issue/revoke Credential, mint SBT. |
-| **Verifier** | Bên cần xác minh | Verifier Dashboard | Gọi verify Credential công khai; khi có consent, nhận wrapped key, tải và giải mã tài liệu; truy cập GatedService. |
+| **Verifier** | Bên cần xác minh | Verifier Dashboard | Gọi verify Credential công khai; khi có consent, kiểm tra `hasAccess`, nhận wrapped key, tải và giải mã tài liệu. Không phải người gọi `GatedService` trong MVP. |
 
 **Owner/Admin:** Địa chỉ deploy được dùng bằng script khởi tạo để cấp `ISSUER_ROLE`. Không phát triển dashboard admin riêng trong prototype.
 
@@ -142,29 +142,29 @@ flowchart TB
 
 | Hàm | Vai trò được gọi | Hiệu ứng / dữ liệu |
 |:---|:---|:---|
-| `registerKey` | Người dùng sở hữu ví | Công bố RSA public key liên kết với `msg.sender`. |
+| `registerKey` | Người dùng sở hữu ví | Công bố RSA-3072 public key PEM SPKI liên kết với `msg.sender`, chỉ một lần trong MVP. |
 | `createDID` | Holder | Tạo DID một lần cho ví; chống đăng ký trùng. |
 | `requestCredential` | Holder | Lưu yêu cầu, 3 CID file mã hóa, `wrappedKeyForHolder` (phục hồi sau khi mở lại ứng dụng) **và** `wrappedKeyForIssuer` (đơn vị cấp đọc hồ sơ); trạng thái `REQUESTED`. |
 | `issueCredential` | Issuer có quyền | Kiểm tra `ISSUER_ROLE`, yêu cầu hợp lệ, chữ ký EIP-191 và lưu `docHash`, `issuer`; chuyển `ISSUED`. |
-| `verifyCredential` | Bất kỳ người đọc nào | Trả `valid`, issuer, trạng thái/thời điểm; `valid=false` khi revoked/non-issued; **không trả nội dung file gốc**. |
-| `revokeCredential` | Issuer đã phát hành | Chỉ `credential.issuer == msg.sender`; chuyển `REVOKED`, burn SBT nếu đã mint. |
-| `mintSBT` | Issuer đã phát hành | Chỉ cho Credential hợp lệ/chưa revoke; yêu cầu chưa mint trùng. |
+| `verifyCredential` | Bất kỳ người đọc nào | Trả đúng `(bool valid, address holder, address issuer, uint8 status, bytes32 docHash)`; `valid=false` khi revoked/non-issued; **không trả thời điểm cấp hoặc nội dung file gốc**. |
+| `revokeCredential` | Issuer đã phát hành còn role | Cần `ISSUER_ROLE` hiện tại và `credential.issuer == msg.sender`; chuyển `REVOKED`, burn SBT nếu đã mint. |
+| `mintSBT` | Issuer đã phát hành còn role | Cần `ISSUER_ROLE` hiện tại và `credential.issuer == msg.sender`; chỉ cho Credential hợp lệ/chưa revoke, yêu cầu chưa mint trùng. |
 | `grantConsent` | Holder | Bật quyền cho Verifier cụ thể và lưu wrapped key theo public key Verifier. |
 | `revokeConsent` | Holder | Vô hiệu hóa quyền trong trạng thái contract/ứng dụng; không xóa được khóa lịch sử. |
 | `hasAccess` | Bất kỳ người đọc nào | Trả trạng thái consent hiện hành cho credential + verifier. |
 
 **Ràng buộc tiêu biểu:**
 
-- `onlyRole(ISSUER_ROLE)` hoặc `require(hasRole(...))` ở thao tác phát hành/thu hồi/mint.
+- `ISSUER_ROLE` hiện tại và `credential.issuer == msg.sender` đều được kiểm tra ở thao tác thu hồi/mint.
 - `require(credential.issuer == msg.sender)` với thu hồi/mint tương ứng.
 - Chỉ ví Holder có quyền grant/revoke consent; không cấp lại Credential đã bị thu hồi.
-- Mỗi ví có một DID, mỗi DID có một Credential tốt nghiệp **trong phạm vi demo**.
+- Mỗi ví đăng ký đúng một DID. Một DID có thể có nhiều Credential. Mỗi lần gọi `requestCredential()` hợp lệ, Registry sinh một `credentialId` mới.
 
 ### 4.2 `IdentitySBT.sol` — NFT định danh không chuyển nhượng
 
 - Kế thừa **ERC-721** của OpenZeppelin 5.x.
 - `tokenId = credentialId` để liên kết chứng chỉ và token.
-- `SSIRegistry` là thành phần duy nhất được ủy quyền mint/burn, không cho người dùng thông thường tự tạo hoặc hủy.
+- `SSIRegistry` được bind một lần là thành phần duy nhất được ủy quyền mint/burn; không cho người dùng thông thường tự tạo hoặc hủy. MVP không hỗ trợ đổi Registry.
 - Override `_update` để **chặn chuyển token giữa hai địa chỉ khác không**, nhưng cho phép mint từ `address(0)` và burn về `address(0)`.
 - Trạng thái Credential nguồn ở Registry quyết định tính hợp lệ. Khi Credential bị revoke, Registry burn SBT trong cùng giao dịch để không xảy ra sai lệch trạng thái.
 
@@ -172,7 +172,8 @@ flowchart TB
 
 **Chốt phương án triển khai:** `accessService(uint256 credentialId)` là **hàm gửi giao dịch, không khai báo `view`**.
 
-- Kiểm tra SBT có `tokenId = credentialId` và thuộc về `msg.sender`; đồng thời tra Registry để chắc chắn Credential đang `ISSUED` và còn hợp lệ.
+- Holder gọi hàm bằng chính ví đang sở hữu SBT có `tokenId = credentialId`; contract kiểm tra SBT thuộc về `msg.sender`, đồng thời tra Registry để chắc chắn Credential đang `ISSUED` và Holder trong Credential đúng người gọi.
+- Gate không gọi `hasAccess()` và không kiểm tra Consent; Consent là quyền ứng dụng dành cho Verifier truy xuất/giải mã hồ sơ.
 - Nếu hợp lệ, **phát event** `ServiceAccessed(address indexed user, uint256 indexed credentialId)`; transaction receipt và event trên Sepolia là minh chứng cho nghiệp vụ token-gated access.
 - Nếu thiếu SBT, không sở hữu SBT hoặc Credential đã thu hồi, contract **revert**. Khi demo tình huống bị từ chối, chỉ mô phỏng bằng `eth_call`/`.call()` và bắt lỗi trên giao diện; không cố tình gửi giao dịch thất bại lên Sepolia (rubric giới hạn lỗi giao dịch).
 - Không phát hành thêm token mới, không ghi nhận doanh thu, không triển khai một dịch vụ nghiệp vụ ngoài đề tài.
@@ -183,7 +184,7 @@ flowchart TB
 |:---|:---|
 | `app/` | 3 dashboard theo vai trò, nút tương tác, trạng thái giao dịch, kết quả xác minh. |
 | `web3_client/` | RPC Sepolia/local, ABI, gas, ký transaction bằng ví testnet cục bộ, gửi và chờ receipt, bắt lỗi revert. |
-| `crypto/` | Sinh RSA keypair, lưu PEM mã hóa, sinh AES key, AES-GCM từng file với nonce khác nhau, RSA-OAEP wrap/unwrap key, EIP-191. |
+| `crypto/` | Sinh/kiểm tra cặp RSA-3072, lưu private PEM PKCS8 mã hóa, fingerprint DER SPKI, sinh AES key, AES-GCM từng file với nonce khác nhau, RSA-OAEP SHA-256 wrap/unwrap key, EIP-191. |
 | `ipfs/` | Upload/retrieve ciphertext, quản lý 3 CID, kiểm tra SHA-256 file giải mã. |
 
 ---
@@ -193,9 +194,10 @@ flowchart TB
 ### 5.1 Tạo DID và đăng ký khóa
 
 1. Holder chuẩn bị ví testnet riêng (khóa ví Ethereum theo secp256k1); lưu keystore cục bộ có mật khẩu.
-2. Ứng dụng tạo cặp RSA riêng phục vụ trao đổi khóa AES; RSA private key lưu PEM mã hóa mật khẩu.
-3. Holder gửi `registerKey` và `createDID` trên `SSIRegistry`; ví và DID mô phỏng gắn với nhau.
-4. Ứng dụng hiển thị mã DID, trạng thái giao dịch và block/transaction hash sau khi được xác nhận.
+2. Ứng dụng tạo cặp RSA-3072 riêng theo role phục vụ trao đổi khóa AES; private PEM PKCS8 mã hóa mật khẩu, public PEM là SPKI. Script từ chối ghi đè cặp đã có và kiểm tra public/private pair nhất quán.
+3. Operator backup private PEM, password và fingerprint SHA-256 của DER SPKI trước khi Holder gửi `registerKey`. Ứng dụng chỉ đăng ký khi on-chain chưa có key, sau đó đọc lại key để đối chiếu fingerprint; key đã đăng ký không đổi trong MVP.
+4. Holder gửi `createDID` trên `SSIRegistry`; ví và DID mô phỏng gắn với nhau.
+5. Ứng dụng hiển thị mã DID, trạng thái giao dịch và block/transaction hash sau khi được xác nhận. Mất private PEM khiến credential cũ không thể giải mã; không có key rotation/rewrap trong MVP.
 
 ### 5.2 Mã hóa hồ sơ, upload IPFS và yêu cầu chứng chỉ
 
@@ -210,9 +212,8 @@ flowchart TB
 
 1. Issuer dùng RSA private key của mình để unwrap AES key và giải mã bản PDF/JPG/JSON từ IPFS.
 2. Sau bước **thẩm định mô phỏng**, Issuer tính `docHash` và xác nhận hash phù hợp với dữ liệu dự kiến cấp.
-3. Nội dung cần ký EIP-191 được chốt theo cấu trúc:
-   `keccak256(abi.encode(contractAddress, chainId, credentialId, holder, docHash))`.
-4. Phía Python ký **32 byte của hash** theo quy tắc `personal_sign`/EIP-191. Phía Solidity tạo **cùng hash**, dùng `MessageHashUtils.toEthSignedMessageHash(...)`, rồi `ECDSA.recover(...)` kiểm tra signer có đúng Issuer gửi giao dịch hay không.
+3. Tạo đúng digest thô 32 byte: `keccak256(abi.encode(registryAddress, chainId, credentialId, holderAddress, docHash))`.
+4. Phía Python áp dụng EIP-191 `personal_sign` trên **32 byte digest thô**, không ký chuỗi hex, JSON hay biểu diễn UTF-8. Phía Solidity tái tạo digest, dùng `MessageHashUtils.toEthSignedMessageHash(...)`, rồi `ECDSA.recover(...)` kiểm tra signer có đúng Issuer gửi giao dịch hay không.
 5. `issueCredential` kiểm tra quyền và chữ ký; cập nhật `ISSUED`, lưu dữ liệu chứng nhận cần thiết.
 6. Issuer gọi `mintSBT`: token ID bằng credential ID, token thuộc ví Holder. Chữ ký chứng chỉ **khác chữ ký Ethereum dùng gửi giao dịch**.
 
@@ -223,11 +224,12 @@ flowchart TB
 3. Giao diện kiểm tra `hasAccess`; Verifier tải ciphertext theo CID từ IPFS, dùng RSA private key của mình unwrap AES key và giải mã file.
 4. Ứng dụng so sánh `SHA-256(diploma.pdf)` sau giải mã với hash gắn trên Credential; chỉ báo khớp khi bằng nhau.
 5. Holder có thể `revokeConsent`; sau đó ứng dụng tuân thủ trạng thái hiện hành sẽ từ chối các lần chia sẻ mới. **Nhưng** Verifier có thể khai thác wrapped key đã tồn tại trong lịch sử blockchain (kể cả khi chưa tải trước lúc revoke), nên hệ thống **không thể thu hồi khả năng giải mã dữ liệu cũ bằng mật mã**.
+6. Verifier không gọi `GatedService` trong MVP. Token-gated service là luồng riêng để Holder sở hữu SBT hợp lệ gọi bằng ví của mình.
 
 ### 5.5 Thu hồi chứng chỉ và token-gated access
 
-1. Issuer đã phát hành gọi `revokeCredential`.
-2. Registry kiểm tra `msg.sender` trùng `credential.issuer`, chuyển Credential sang `REVOKED` và burn SBT tương ứng trong cùng transaction.
+1. Issuer đã phát hành và vẫn còn `ISSUER_ROLE` gọi `revokeCredential`.
+2. Registry kiểm tra role hiện tại và `msg.sender` trùng `credential.issuer`, chuyển Credential sang `REVOKED` và burn SBT tương ứng trong cùng transaction.
 3. Sau thu hồi: `verifyCredential` trả `valid=false`; `GatedService.accessService()` không cho phép dùng dịch vụ; việc thử chuyển SBT giữa hai ví luôn bị từ chối theo thiết kế.
 
 ### 5.6 Sơ đồ tuần tự cấp và xác minh
@@ -312,14 +314,14 @@ stateDiagram-v2
 | Grant/revoke consent cho Credential của mình | ✓ | — | — |
 | Tải ciphertext từ IPFS khi biết CID | Có thể | Có thể | Có thể |
 | Giải mã hồ sơ | ✓ với khóa | ✓ nếu được Holder cung cấp khóa | ✓ khi được bọc khóa cho Verifier (consent) |
-| Vào dịch vụ token-gated | ✓ khi SBT hợp lệ | Chỉ nếu chính ví Issuer có SBT hợp lệ | Chỉ nếu chính ví Verifier có SBT hợp lệ |
+| Vào dịch vụ token-gated | ✓ khi chính ví Holder sở hữu SBT hợp lệ | Chỉ nếu chính ví Issuer sở hữu SBT hợp lệ | — (không phải người gọi Gate trong MVP) |
 
 **Giới hạn quan trọng:** `hasAccess()` và giao diện kiểm tra consent không ngăn người lạ đọc ciphertext hoặc lịch sử on-chain. Bảo mật nội dung do RSA/AES đảm nhiệm. Thu hồi consent chặn hành vi **được hệ thống hỗ trợ sau này**, không thể tước khả năng giải mã của người từng được cấp khóa.
 
 ### 6.4 Quy tắc mật mã và bảo mật thực hành
 
 - Ví Ethereum: khóa riêng secp256k1 ký giao dịch; không nhầm với RSA private key.
-- RSA keypair: mỗi vai trò một cặp, RSA-2048 cho prototype; private key PEM mã hóa bằng mật khẩu. RSA-OAEP dùng bọc khóa AES; `registerKey` chỉ ghi public key cho `msg.sender`, và giao diện hiển thị địa chỉ ví cùng public key của người nhận để Holder kiểm tra trước khi bọc khóa. Không tự xây PKI mới.
+- RSA keypair: mỗi vai trò một cặp **RSA-3072**; private key PEM PKCS8 mã hóa bằng mật khẩu, public key PEM SubjectPublicKeyInfo. RSA-OAEP SHA-256 dùng bọc khóa AES; fingerprint là SHA-256 của DER SubjectPublicKeyInfo. `registerKey` chỉ ghi public key đầu tiên cho `msg.sender`; giao diện phải backup/kiểm tra fingerprint trước register và đọc lại on-chain sau register. Không có key rotation/rewrap trong MVP; mất private key có thể làm dữ liệu cũ không giải mã được.
 - AES-GCM: một khóa 256 bit mỗi bộ hồ sơ và nonce 12 byte mới cho từng file; mỗi ciphertext cần lưu nonce/tag để giải mã.
 - Chữ ký Issuer: domain gồm địa chỉ contract, `chainId`, `credentialId`, `holder`, `docHash`; bên Python và Solidity sử dụng cùng serialization và EIP-191 prefix.
 - Chỉ test bằng tài khoản Sepolia và tài liệu giả; `.env`, keystore, RSA PEM bí mật và file dữ liệu thật phải được loại khỏi commit.
@@ -371,11 +373,12 @@ GitHub repository
 ### 7.2 Quy trình tích hợp và triển khai
 
 1. **Local:** Hardhat tạo local node; compile Solidity và lấy ABI/artifacts; Web3.py kết nối RPC.
-2. **Contract test:** pytest gọi contract trên local chain, kiểm tra các điều kiện `require`, chữ ký và vòng đời Credential; mỗi ca có trạng thái độc lập.
-3. **Crypto/IPFS test:** AES-GCM với nonce không lặp, RSA wrap/unwrap, tải IPFS 3 tệp, giải mã và so sánh SHA-256.
-4. **Integration test:** Từ Streamlit chạy trọn luồng Holder → Issuer → Verifier, gồm consent, mint SBT, kiểm tra gate, revoke và truy vấn lại.
-5. **Sepolia:** Khi local ổn định, deploy 3 contract, cấp quyền Issuer, cập nhật địa chỉ/ABI, chạy bộ giao dịch minh chứng và lưu hash/receipt/explorer URL.
-6. **Báo cáo & Demo:** Thu ảnh có chú thích, test report, sơ đồ, mô tả các ràng buộc, chuẩn bị bản chạy local dự phòng và video có caption nếu dùng.
+2. **Hardhat/TypeScript contract & deployment tests:** kiểm tra Solidity, các điều kiện `require`, chữ ký, vòng đời Credential và deployment workflow; mốc M1 là 39 tests passing.
+3. **pytest Python unit:** kiểm tra AES-GCM với nonce không lặp, RSA wrap/unwrap, role-key và helper Python; mốc M1 là 66 tests passing.
+4. **Web3.py integration:** kiểm tra Python kết nối blockchain local; mốc M1 là 1 test passing khi node local đáp ứng yêu cầu. Luồng dashboard end-to-end là evidence riêng, không gộp vào các số pytest này.
+5. **Deploy local/Sepolia:** kiểm tra chain ID và signer, deploy theo thứ tự `IdentitySBT → SSIRegistry → setRegistry → GatedService`, xác minh bytecode/liên kết/role, rồi ghi manifest mới có deployment ID, transaction hash, block và genesis hash. Manifest cũ không bị ghi đè mặc định. Sau đó setup Issuer và đọc lại role.
+6. **Sepolia evidence:** Khi local ổn định, cập nhật địa chỉ/ABI từ manifest, chạy bộ giao dịch minh chứng và lưu hash/receipt/explorer URL.
+7. **Báo cáo & Demo:** Thu ảnh có chú thích, test report, sơ đồ, mô tả các ràng buộc, chuẩn bị bản chạy local dự phòng và video có caption nếu dùng.
 
 ### 7.3 Ca kiểm thử nghiệm thu tối thiểu
 

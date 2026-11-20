@@ -8,15 +8,30 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract IdentitySBT is ERC721, AccessControl {
     bytes32 public constant REGISTRY_ROLE = keccak256("REGISTRY_ROLE");
 
+    bool private _registrySet;
+
     error Soulbound();
 
     constructor(address admin) ERC721("SSI Identity SBT", "SSISBT") {
+        require(admin != address(0), "zero address");
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     function setRegistry(address registry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(!_registrySet, "registry already set");
         require(registry != address(0), "registry=0");
+
+        _registrySet = true;
         _grantRole(REGISTRY_ROLE, registry);
+    }
+
+    function grantRole(bytes32 role, address account)
+        public
+        override
+        onlyRole(getRoleAdmin(role))
+    {
+        require(role != REGISTRY_ROLE, "use setRegistry");
+        super.grantRole(role, account);
     }
 
     function mint(address holder, uint256 credentialId) external onlyRole(REGISTRY_ROLE) {
