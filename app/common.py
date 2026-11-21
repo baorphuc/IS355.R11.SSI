@@ -10,11 +10,10 @@ from web3_client.client import SSIClient
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Load environment variables from project root.
-load_dotenv(ROOT / ".env")
-
-
 def page_header(role: str) -> SSIClient:
+    # Load only when a dashboard entry point is being initialized. This keeps
+    # import-only checks from reading the real local environment.
+    load_dotenv(ROOT / ".env")
     st.set_page_config(
         page_title=f"SSI MVP - {role}",
         page_icon="🔐",
@@ -23,15 +22,15 @@ def page_header(role: str) -> SSIClient:
     st.title(f"SSI MVP — {role}")
     st.caption("Prototype học tập. Chỉ dùng dữ liệu giả và ví testnet.")
 
-    client = SSIClient()
-
     try:
-        client.require_connection()
+        client = SSIClient()
+        verified_chain_id = client.require_connection()
         st.success(
-            f"RPC đã kết nối · chainId {client.w3.eth.chain_id}"
+            f"RPC đã kết nối · chainId {verified_chain_id}"
         )
     except ConnectionError as error:
         st.error(str(error))
+        st.stop()
 
     return client
 

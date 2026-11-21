@@ -2,7 +2,7 @@ import { ethers, network } from "hardhat";
 import { link, mkdir, readFile, readdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { ContractTransactionResponse } from "ethers";
+import type { ContractTransactionResponse, TransactionRequest } from "ethers";
 
 export class ValidationError extends Error {}
 export function check(ok: unknown, message: string): asserts ok {
@@ -31,6 +31,78 @@ type Receipt = { hash: string; blockHash: string; blockNumber: number };
 type Manifest = Awaited<ReturnType<typeof context>> & Addresses & {
   timestamp: string; transactions: Record<Name | "binding", Receipt>;
 };
+
+export const DEPLOYMENT_GAS_CEILINGS = {
+  IdentitySBT: 8_899_558n,
+  SSIRegistry: 14_431_531n,
+  binding: 1_000_000n,
+  GatedService: 1_696_813n,
+  grantRole: 1_000_000n,
+} as const;
+export type DeploymentStep = keyof typeof DEPLOYMENT_GAS_CEILINGS;
+
+export type DeploymentFeeConfig = {
+  maxFeePerGas: bigint;
+  maxPriorityFeePerGas: bigint;
+};
+export type DeploymentOverrides = DeploymentFeeConfig & { gasLimit: bigint };
+export type RecordedTransaction = {
+  hash: string;
+  wait(): Promise<{ status: number | null; blockNumber: number; blockHash: string | null } | null>;
+};
+
+const SEPOLIA_CHAIN_ID = "11155111";
+const maxFeeEnv = "SSI_DEPLOY_MAX_FEE_GWEI";
+const priorityFeeEnv = "SSI_DEPLOY_MAX_PRIORITY_FEE_GWEI";
+
+function parseGwei(value: string | undefined, name: string) {
+  const normalized = value?.trim();
+  check(normalized && /^(?:0|[1-9]\d*)(?:\.\d{1,9})?$/.test(normalized), "Invalid " + name);
+  const wei = ethers.parseUnits(normalized, "gwei");
+  check(wei > 0n, "Invalid " + name);
+  return wei;
+}
+
+export function deploymentFeeConfig(
+  chainId: string,
+  env: Record<string, string | undefined> = process.env,
+): DeploymentFeeConfig | undefined {
+  if (chainId !== SEPOLIA_CHAIN_ID) return undefined;
+  check(Boolean(env[maxFeeEnv]?.trim()) && Boolean(env[priorityFeeEnv]?.trim()),
+    "Sepolia requires " + maxFeeEnv + " and " + priorityFeeEnv);
+  const maxFeePerGas = parseGwei(env[maxFeeEnv], maxFeeEnv);
+  const maxPriorityFeePerGas = parseGwei(env[priorityFeeEnv], priorityFeeEnv);
+  check(maxPriorityFeePerGas <= maxFeePerGas, "Deployment priority fee exceeds max fee");
+  return { maxFeePerGas, maxPriorityFeePerGas };
+}
+
+export function deploymentOverrides(
+  step: DeploymentStep,
+  estimate: bigint,
+  fees: DeploymentFeeConfig,
+): DeploymentOverrides {
+  const gasLimit = DEPLOYMENT_GAS_CEILINGS[step];
+  check(estimate <= gasLimit, "Gas estimate exceeds ceiling for " + step);
+  return { ...fees, gasLimit };
+}
+
+async function guardedOverrides(
+  step: DeploymentStep,
+  transaction: TransactionRequest,
+  sender: string,
+  fees: DeploymentFeeConfig | undefined,
+): Promise<DeploymentOverrides | undefined> {
+  if (!fees) return undefined;
+  const estimate = await ethers.provider.estimateGas({ ...transaction, from: sender });
+  return deploymentOverrides(step, estimate, fees);
+}
+
+export async function recordTransaction(key: string, tx: RecordedTransaction): Promise<Receipt> {
+  console.log(key, tx.hash);
+  const receipt = await tx.wait();
+  check(receipt?.status === 1 && receipt.blockHash, "Transaction failed: " + key);
+  return { hash: tx.hash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash };
+}
 
 export function manifestPath(dir: string, id?: string) {
   if (id !== undefined) check(/^[a-zA-Z0-9_]{1,64}$/.test(id), "Invalid deployment ID");
@@ -74,6 +146,7 @@ export async function loadDeployment(dir: string, id?: string) {
 export async function deploy(dir: string, id?: string, issuer?: string) {
   const current = await context();
   if (issuer) address(issuer, "Issuer");
+  const fees = deploymentFeeConfig(current.chainId);
   const file = manifestPath(dir, id);
   await mkdir(dir, { recursive: true });
   const lock = path.join(dir, network.name + ".deploy.lock");
@@ -82,16 +155,16 @@ export async function deploy(dir: string, id?: string, issuer?: string) {
   const addresses = {} as Addresses;
   const transactions = {} as Manifest["transactions"];
   async function record(key: keyof typeof transactions, tx: ContractTransactionResponse) {
-    console.log(key, tx.hash);
-    const r = await tx.wait();
-    check(r?.status === 1, "Transaction failed: " + key);
-    transactions[key] = { hash: tx.hash, blockNumber: r.blockNumber, blockHash: r.blockHash };
+    transactions[key] = await recordTransaction(key, tx);
   }
   async function create(name: Name, args: string[]) {
     step = "deploy " + name;
-    const contract = await ethers.deployContract(name, args);
-    addresses[name] = await contract.getAddress();
+    const factory = await ethers.getContractFactory(name);
+    const request = await factory.getDeployTransaction(...args);
+    const overrides = await guardedOverrides(name, request, current.deployer, fees);
+    const contract = overrides ? await factory.deploy(...args, overrides) : await factory.deploy(...args);
     await record(name, contract.deploymentTransaction()!);
+    addresses[name] = await contract.getAddress();
     return contract;
   }
   try {
@@ -102,7 +175,15 @@ export async function deploy(dir: string, id?: string, issuer?: string) {
     const sbt = await create("IdentitySBT", [current.deployer]);
     await create("SSIRegistry", [current.deployer, addresses.IdentitySBT]);
     step = "bind Registry";
-    await record("binding", await sbt.setRegistry(addresses.SSIRegistry));
+    const binding = await guardedOverrides(
+      "binding",
+      await sbt.setRegistry.populateTransaction(addresses.SSIRegistry),
+      current.deployer,
+      fees,
+    );
+    await record("binding", binding
+      ? await sbt.setRegistry(addresses.SSIRegistry, binding)
+      : await sbt.setRegistry(addresses.SSIRegistry));
     await create("GatedService", [addresses.IdentitySBT, addresses.SSIRegistry]);
     step = "verify contracts and roles";
     const m: Manifest = { ...current, ...addresses, timestamp: new Date().toISOString(), transactions };
@@ -125,13 +206,19 @@ export async function setupIssuer(dir: string, id: string | undefined, target: s
   const account = address(issuer, "Issuer");
   const destination = address(target, "Registry");
   const { m, registry, signer } = await loadDeployment(dir, id);
+  const fees = deploymentFeeConfig(m.chainId);
   check(destination === m.SSIRegistry, "Registry differs from manifest");
   check(await registry.hasRole(await registry.DEFAULT_ADMIN_ROLE(), signer), "Signer lacks Registry admin");
   const role = await registry.ISSUER_ROLE();
   if (await registry.hasRole(role, account)) return "ISSUER_ROLE already verified";
-  const tx = await registry.grantRole(role, account);
-  console.log("Grant ISSUER_ROLE", account, tx.hash);
-  await tx.wait();
+  const overrides = await guardedOverrides(
+    "grantRole",
+    await registry.grantRole.populateTransaction(role, account),
+    signer,
+    fees,
+  );
+  const tx = overrides ? await registry.grantRole(role, account, overrides) : await registry.grantRole(role, account);
+  await recordTransaction("grantRole", tx);
   check(await registry.hasRole(role, account), "ISSUER_ROLE verification failed");
   return "ISSUER_ROLE PASS";
 }

@@ -206,7 +206,7 @@ flowchart TB
 3. Upload ba ciphertext lên IPFS Kubo; nhận ba CID.
 4. Tính `SHA-256` trên **file PDF gốc** trước mã hóa để làm bằng chứng toàn vẹn, tránh nhầm lẫn với CID của ciphertext.
 5. Holder bọc AES key bằng RSA public key **của chính Holder** để khôi phục; bọc thêm một bản bằng RSA public key **Issuer** để đơn vị cấp giải mã tài liệu mẫu.
-6. Holder gửi `requestCredential` gồm `credentialId`/tham chiếu hồ sơ, ba CID, `wrappedKeyForHolder` và `wrappedKeyForIssuer`; trạng thái chuyển sang `REQUESTED`. **Hai khóa bọc là ciphertext RSA-OAEP riêng cho hai public key khác nhau**, không phải hai AES key khác nhau.
+6. Holder gửi `requestCredential(portraitCid, diplomaCid, metadataCid, wrappedKeyForHolder, wrappedKeyForIssuer)` theo đúng thứ tự tham số. Registry tự sinh `credentialId` tăng dần (Holder không truyền ID), phát event `CredentialRequested` và lưu trạng thái `REQUESTED`. **Hai khóa bọc là ciphertext RSA-OAEP riêng cho hai public key khác nhau**, không phải hai AES key khác nhau.
 
 ### 5.3 Issuer ký EIP-191, phát hành và mint SBT
 
