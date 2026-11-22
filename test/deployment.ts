@@ -3,7 +3,19 @@ import { ethers } from "hardhat";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { address, context, deploy, loadDeployment, manifestPath, setupIssuer, verify } from "../scripts/deployment";
+import {
+  DEPLOYMENT_GAS_CEILINGS,
+  address,
+  context,
+  deploy,
+  deploymentFeeConfig,
+  deploymentOverrides,
+  loadDeployment,
+  manifestPath,
+  recordTransaction,
+  setupIssuer,
+  verify,
+} from "../scripts/deployment";
 
 async function fails(action: Promise<unknown>, message: string) {
   let failure: unknown;
@@ -83,5 +95,39 @@ describe("deployment validation", function () {
   it("DV09 rejects missing dependency bytecode", async () => {
     const m = await deploy(dir);
     await fails(verify({ ...m, IdentitySBT: m.deployer }), "Missing bytecode: IdentitySBT");
+  });
+
+  it("DV10 requires a complete valid Sepolia fee configuration", () => {
+    expect(deploymentFeeConfig("31337", {})).to.equal(undefined);
+    expect(() => deploymentFeeConfig("11155111", {})).to.throw("Sepolia requires");
+    expect(() => deploymentFeeConfig("11155111", { SSI_DEPLOY_MAX_FEE_GWEI: "1" })).to.throw("Sepolia requires");
+    expect(() => deploymentFeeConfig("11155111", {
+      SSI_DEPLOY_MAX_FEE_GWEI: "1.0000000001", SSI_DEPLOY_MAX_PRIORITY_FEE_GWEI: "0.1",
+    })).to.throw("Invalid SSI_DEPLOY_MAX_FEE_GWEI");
+    expect(() => deploymentFeeConfig("11155111", {
+      SSI_DEPLOY_MAX_FEE_GWEI: "0.1", SSI_DEPLOY_MAX_PRIORITY_FEE_GWEI: "1",
+    })).to.throw("Deployment priority fee exceeds max fee");
+  });
+
+  it("DV11 applies exact fee and gas ceilings to all five Sepolia transaction paths", () => {
+    const fees = deploymentFeeConfig("11155111", {
+      SSI_DEPLOY_MAX_FEE_GWEI: "1", SSI_DEPLOY_MAX_PRIORITY_FEE_GWEI: "0.1",
+    });
+    expect(fees).to.deep.equal({ maxFeePerGas: 1_000_000_000n, maxPriorityFeePerGas: 100_000_000n });
+    for (const [step, ceiling] of Object.entries(DEPLOYMENT_GAS_CEILINGS)) {
+      const overrides = deploymentOverrides(step as keyof typeof DEPLOYMENT_GAS_CEILINGS, ceiling, fees!);
+      expect(overrides).to.deep.equal({ ...fees, gasLimit: ceiling });
+      expect(() => deploymentOverrides(step as keyof typeof DEPLOYMENT_GAS_CEILINGS, ceiling + 1n, fees!))
+        .to.throw("Gas estimate exceeds ceiling for " + step);
+    }
+  });
+
+  it("DV12 waits once and never retries a failed receipt", async () => {
+    let waitCalls = 0;
+    await fails(recordTransaction("binding", {
+      hash: "0x01",
+      async wait() { waitCalls += 1; throw new Error("receipt timeout"); },
+    }), "receipt timeout");
+    expect(waitCalls).to.equal(1);
   });
 });

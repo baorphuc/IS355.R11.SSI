@@ -21,10 +21,6 @@ from ipfs.kubo_client import KuboClient
 
 client = page_header("Issuer")
 
-if client.w3.eth.chain_id != 31337:
-    st.error("Dashboard hiện chỉ hỗ trợ Hardhat local chain 31337.")
-    st.stop()
-
 def required_env(name):
     value = os.getenv(name, "").strip()
     if not value:

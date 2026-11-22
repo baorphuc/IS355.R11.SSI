@@ -14,7 +14,7 @@ Nguồn ưu tiên: `architecture.md` mới nhất. Khi outline/WBS khác archite
 
 Vòng đời credential, `ISSUER_ROLE`, chữ ký EIP-191, mint/burn SBT, chặn transfer, consent hiện hành và gate/event. Mint/revoke yêu cầu caller vừa có `ISSUER_ROLE` hiện tại vừa là original Issuer lưu trên credential. Sau revoke, SBT tương ứng bị burn và Gate từ chối truy cập.
 
-`registerKey(bytes)` chỉ cho phép public RSA key đầu tiên của ví. Key này bất biến trong MVP; contract không lưu private PEM, key version hoặc lịch sử rewrap. Holder chỉ grant/revoke consent khi credential đã issued; revoke chỉ tắt consent hiện hành, không thể xóa bytes đã xuất hiện trong lịch sử chain.
+`registerKey(bytes)` chỉ cho phép public RSA key đầu tiên của ví. Key này bất biến trong MVP; contract không lưu private PEM, key version hoặc lịch sử rewrap. `grantConsent` yêu cầu caller là Holder của Credential, Credential đang `ISSUED`, Verifier khác địa chỉ zero và wrapped key không rỗng. `revokeConsent` chỉ kiểm tra caller là Holder của Credential rồi tắt consent hiện hành; hàm này không yêu cầu trạng thái `ISSUED` và không thể xóa bytes đã xuất hiện trong lịch sử chain.
 
 `IdentitySBT.setRegistry` chỉ bind một Registry. Không hỗ trợ thay Registry hoặc cấp Registry thứ hai trong MVP; cấu hình sai cần deployment mới. Các policy trên giữ nguyên chữ ký ABI FROZEN v1.
 

@@ -19,7 +19,7 @@
 </p>
 
 > [!IMPORTANT]
-> Đây là **MVP phục vụ học tập**, chưa phải hệ thống SSI/Verifiable Credential hoàn chỉnh. Luồng local Holder/Issuer/Verifier, mã hóa/IPFS và dashboard đã có implementation/test tương ứng; Sepolia và bằng chứng nghiệm thu cuối vẫn chưa được tuyên bố hoàn thành.
+> Đây là **MVP phục vụ học tập**, chưa phải hệ thống SSI/Verifiable Credential hoàn chỉnh. Luồng local Holder/Issuer/Verifier, mã hóa/IPFS và dashboard đã có implementation/test tương ứng. Phiên Sepolia `sepolia_demo_20261121_072039` đã có evidence triển khai và E2E được xác minh; ảnh lịch sử E2E vẫn chưa được lưu thành file và hồ sơ báo cáo/slide/video còn là công việc riêng.
 
 ---
 
@@ -67,7 +67,8 @@ Giao diện tích hợp giữa bốn mảng đã được khóa tại [`docs/2-p
 | Web3.py kết nối Hardhat local | ✅ | Có integration test |
 | IPFS Kubo client | ✅ | Đã kiểm thử Kubo thật (0.43.1): upload/retrieve 3 file .enc, byte-for-byte khớp, docHash matches, RSA-OAEP wrap/unwrap trong luồng thực. Xem `evidence/member_b_kubo_e2e.md`. |
 | Ba dashboard Streamlit | ✅ | Holder, Issuer, Verifier thực thi được trong môi trường sạch local; không thay cho evidence Sepolia |
-| Deploy Sepolia | ⬜ | Chưa chạy và chưa có tx hash thật |
+| Deploy Sepolia | ✅ | Deployment `sepolia_demo_20261121_072039` trên chain `11155111`: 5 receipt đã xác minh cho deploy IdentitySBT, SSIRegistry, Registry binding, GatedService và cấp `ISSUER_ROLE`. |
+| E2E Sepolia — Credential 1 | ✅ | M1-30 xác minh 10/10 receipt: đăng ký key, DID, request, issue, mint SBT, grant/revoke Consent và Gate. `docHash` khớp SHA-256 PDF; event Gate đúng Holder/Credential 1. Ảnh lịch sử E2E vẫn MISSING. |
 | Báo cáo/slide/video nghiệm thu | ⬜ | Nhóm tiếp tục thực hiện theo WBS |
 
 Mốc regression M1 gần nhất (local/isolated environment):
@@ -242,6 +243,38 @@ python -m streamlit run app\verifier.py --server.port 8503
 
 Trước khi dùng dashboard, `.env` phải có RPC, ba địa chỉ contract từ manifest và password RSA theo role. Dashboard tạo/kiểm tra key pair theo role, chỉ cho đăng ký public key khi người vận hành đã xác nhận backup private PEM và fingerprint. Không dán PEM, password hoặc private key vào giao diện/log.
 
+#### Chọn mạng cho dashboard
+
+Mặc định tương thích local: nếu **cả hai** biến `SSI_RPC_URL` và
+`SSI_EXPECTED_CHAIN_ID` không có, dashboard dùng `LOCAL_RPC_URL` và bắt buộc
+chain ID `31337`. Để chọn Sepolia (hoặc một mạng khác), đặt **cả hai** biến
+trong cùng phiên PowerShell/.env, ví dụ `SSI_EXPECTED_CHAIN_ID=11155111`.
+Đặt thiếu một biến hoặc chain ID không hợp lệ sẽ chặn dashboard trước mọi thao
+tác on-chain; không có fallback âm thầm về local. Dashboard chỉ hiển thị chain
+ID thực tế, không hiển thị RPC URL.
+
+Khi quay lại Fresh-chain, dùng một phiên PowerShell mới và bảo đảm cả hai biến
+`SSI_*` không có trong **phiên lẫn `.env`** trước khi khởi động dashboard;
+nếu không, dashboard có thể vẫn chọn Sepolia. `start-local.ps1` hiện chỉ đặt
+`LOCAL_RPC_URL`, nên không tự xóa cấu hình `SSI_*`. Lấy `SSI_REGISTRY_ADDRESS`, `IDENTITY_SBT_ADDRESS` và
+`GATED_SERVICE_ADDRESS` từ **cùng một manifest** của network/deployment đã
+chọn; chain ID đúng không tự chứng minh các địa chỉ đó thuộc đúng deployment.
+
+#### Lưu ý thao tác demo Sepolia
+
+Phiên evidence Sepolia đã nghiệm thu `sepolia_demo_20261121_072039` sử dụng
+Credential ID `1`. Sau khi đổi Credential ID trong dashboard, chờ Streamlit
+rerun hoàn tất và kiểm tra phần thông tin Credential đã hiển thị đúng ID trước
+khi đọc kết quả hoặc chụp ảnh; không đổi default ID chỉ để phục vụ demo.
+
+`verifyCredential` là xác minh công khai, không cần Consent. Việc tải và giải
+mã ciphertext cần Consent hiện hành cho Verifier. Sau `revokeConsent`, ứng dụng
+phải từ chối các lần truy cập mới; việc đó không thể thu hồi file hoặc wrapped
+key mà bên nhận đã lưu trước đó từ lịch sử chain.
+
+Kubo vẫn là API local tại `http://127.0.0.1:5001`, còn dashboard mặc định dùng
+cổng `8501`, `8502`, `8503`.
+
 ### 7.5 IPFS Kubo
 
 ```powershell
@@ -307,7 +340,22 @@ Mỗi lệnh cần biến password RSA cùng tên role trong `.env`. Script và 
 
 ### 7.6 Sepolia
 
-Điền `SEPOLIA_RPC_URL` và `DEPLOYER_PRIVATE_KEY` vào `.env`, sau đó:
+Điền `SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY` và **cả hai** fee cap sau vào
+`.env`: `SSI_DEPLOY_MAX_FEE_GWEI=1`,
+`SSI_DEPLOY_MAX_PRIORITY_FEE_GWEI=0.1`. Hai giá trị dùng đơn vị gwei chính xác
+và chỉ áp dụng cho lệnh Sepolia; thiếu, sai định dạng hoặc priority lớn hơn max
+sẽ chặn trước transaction đầu tiên. Các ceiling gas của kế hoạch hiện tại là
+IdentitySBT `8,899,558`, SSIRegistry `14,431,531`, Registry binding `1,000,000`,
+GatedService `1,696,813` và `ISSUER_ROLE` `1,000,000`. Script estimate từng
+transaction ngay trước khi gửi rồi dừng nếu vượt ceiling; không tự tăng ceiling,
+retry hoặc deploy lại.
+
+Với max fee `1 gwei`, tổng ceiling năm transaction là `0.027027902` Sepolia ETH.
+Đây là trần ngân sách của kế hoạch, không phải dự đoán gas dùng thực tế. Sau khi
+deploy hoàn tất, đọc manifest mới rồi mới đặt các địa chỉ Registry/SBT/Gate từ
+chính manifest đó trong phiên chạy kế tiếp trước khi cấp role và verify.
+
+Sau đó:
 
 ```powershell
 $env:SSI_DEPLOYMENT_ID = "sepolia-demo-001"
@@ -315,7 +363,7 @@ npm run deploy:sepolia
 npm run roles:sepolia
 ```
 
-Script hiện chỉ deploy/cấp role. Chưa được tuyên bố Sepolia thành công cho tới khi nhóm có contract address và transaction hash thật.
+Script chỉ tự động thực hiện deploy/cấp role; lần chạy mới vẫn phải lưu manifest, contract address và transaction hash để được nghiệm thu. Evidence hiện có của phiên `sepolia_demo_20261121_072039` (lưu ngoài repository) xác minh riêng 5 giao dịch triển khai và 10 giao dịch E2E của Credential `1`; không coi đây là bằng chứng CI, ảnh lịch sử E2E, hay hồ sơ nộp hoàn chỉnh.
 
 ---
 

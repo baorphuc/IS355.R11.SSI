@@ -9,6 +9,41 @@ from web3 import Web3
 from web3.exceptions import TimeExhausted
 
 
+class NetworkConfigurationError(ConnectionError):
+    """Raised when the dashboard network selection is incomplete or unsafe."""
+
+
+def resolve_dashboard_network(environ: dict[str, str] | None = None) -> tuple[str, int]:
+    """Resolve the no-argument dashboard configuration.
+
+    ``SSI_RPC_URL`` and ``SSI_EXPECTED_CHAIN_ID`` form one atomic selection.
+    Supplying only one of them is rejected instead of falling back to local.
+    When neither is present, the historical local workflow remains explicit:
+    ``LOCAL_RPC_URL`` (or localhost) on chain 31337.
+    """
+    env = os.environ if environ is None else environ
+    selected_rpc = env.get("SSI_RPC_URL")
+    selected_chain = env.get("SSI_EXPECTED_CHAIN_ID")
+
+    if selected_rpc is None and selected_chain is None:
+        return env.get("LOCAL_RPC_URL", "http://127.0.0.1:8545"), 31337
+
+    selected_rpc = (selected_rpc or "").strip()
+    selected_chain = (selected_chain or "").strip()
+    if not selected_rpc or not selected_chain:
+        raise NetworkConfigurationError(
+            "Cấu hình mạng SSI phải có đủ SSI_RPC_URL và SSI_EXPECTED_CHAIN_ID."
+        )
+
+    try:
+        expected_chain_id = int(selected_chain, 10)
+    except ValueError as exc:
+        raise NetworkConfigurationError("SSI_EXPECTED_CHAIN_ID phải là số nguyên dương.") from exc
+    if expected_chain_id <= 0 or str(expected_chain_id) != selected_chain:
+        raise NetworkConfigurationError("SSI_EXPECTED_CHAIN_ID phải là số nguyên dương.")
+    return selected_rpc, expected_chain_id
+
+
 class SSIClient:
     def __init__(
         self,
@@ -16,24 +51,31 @@ class SSIClient:
         expected_chain_id: int | None = None,
         timeout: int = 30,
     ):
-        self.rpc_url = (
-            rpc_url
-            or os.getenv("LOCAL_RPC_URL", "http://127.0.0.1:8545")
-        )
+        # Explicit arguments preserve the existing caller contract and do not
+        # combine with dashboard environment selection.
+        if rpc_url is None and expected_chain_id is None:
+            self.rpc_url, self.expected_chain_id = resolve_dashboard_network()
+        else:
+            self.rpc_url = rpc_url or os.getenv("LOCAL_RPC_URL", "http://127.0.0.1:8545")
+            self.expected_chain_id = expected_chain_id
 
         self.w3 = Web3(
             Web3.HTTPProvider(self.rpc_url, request_kwargs={"timeout": timeout})
         )
+        self.verified_chain_id: int | None = None
 
-        self.expected_chain_id = expected_chain_id
+    def require_connection(self) -> int:
+        try:
+            connected = self.w3.is_connected()
+            actual_chain_id = self.w3.eth.chain_id if connected else None
+        except Exception:
+            # Provider exceptions can include authenticated URLs. Never expose
+            # their text through the dashboard's connection error path.
+            raise ConnectionError("Không kết nối được Ethereum RPC đã cấu hình.") from None
 
-    def require_connection(self) -> None:
-        if not self.w3.is_connected():
-            raise ConnectionError(
-                f"Không kết nối được Ethereum RPC tại {self.rpc_url}"
-            )
-
-        actual_chain_id = self.w3.eth.chain_id
+        if not connected:
+            # Do not disclose a provider URL, which may embed an API token.
+            raise ConnectionError("Không kết nối được Ethereum RPC đã cấu hình.")
 
         if (
             self.expected_chain_id is not None
@@ -43,6 +85,8 @@ class SSIClient:
                 f"Sai Chain ID: mong đợi {self.expected_chain_id}, "
                 f"nhận được {actual_chain_id}"
             )
+        self.verified_chain_id = actual_chain_id
+        return actual_chain_id
 
     @staticmethod
     def load_abi(artifact_path: Path) -> list[dict[str, Any]]:
