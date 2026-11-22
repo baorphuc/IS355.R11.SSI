@@ -6,6 +6,8 @@
 >
 > Tài liệu chốt kỹ thuật: `docs/2-planning-phase/interfaces.md` — **FROZEN v1**
 
+> **Lưu ý khi clone mới:** các mục trạng thái/phân công dưới đây là hồ sơ bàn giao skeleton tháng 10/2026, không phải trạng thái hiện tại. Xem README cho trạng thái hiện tại và [LOCAL_QUICKSTART.md](LOCAL_QUICKSTART.md) cho quy trình chạy máy mới.
+
 ## 1. Mục đích của repository
 
 Repository này là nền tảng tối thiểu để bốn thành viên phát triển song song. Đây **chưa phải sản phẩm hoàn chỉnh** và không được báo cáo là đã hoàn thành toàn bộ 12 chức năng. Phạm vi chỉ gồm những nội dung đã chốt trong outline SSI bản 3, Project Charter, architecture mới nhất và WBS 5 Phase.
@@ -164,36 +166,10 @@ Vì vậy luồng phối hợp đúng là: **cùng làm song song → mở PR ri
 
 ## 7. Chạy project trên Windows PowerShell
 
-Cài đặt một lần:
+Thực hiện theo **[LOCAL_QUICKSTART.md](LOCAL_QUICKSTART.md)** để cài dependencies, cấu hình ví local, Kubo, RSA và deployment. Không dùng hướng dẫn skeleton cũ để bỏ qua bước cấp role hoặc thiết lập địa chỉ contract.
 
-```powershell
-npm install
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
-```
-
-Kiểm tra nhanh:
-
-```powershell
-npm run compile
-npm test
-python -m pytest tests\unit -q
-```
-
-Chạy local end-to-end, dùng các terminal riêng:
-
-```powershell
-npm run node
-npm run deploy:local
-python -m pytest tests\integration -q
-streamlit run app\holder.py
-streamlit run app\issuer.py
-streamlit run app\verifier.py
-```
-
-Xem `README.md` để biết quy trình deploy/cấp role chi tiết.
+Ba dashboard dùng cổng riêng: Holder `8501`, Issuer `8502`, Verifier `8503`.
+README có hướng dẫn Sepolia riêng; clone repository không tự cung cấp quyền ví/key hoặc dữ liệu của phiên Sepolia cũ.
 
 ## 8. An toàn và dữ liệu demo
 
