@@ -159,25 +159,31 @@ ssi-ethereum-skeleton/
 
 ## 6. Cài đặt trên Windows
 
+Hướng dẫn clone và chạy local lần đầu: **[LOCAL_QUICKSTART.md](LOCAL_QUICKSTART.md)**.
+Chạy local mới không cần RPC Sepolia hoặc private key của các thành viên khác.
+
 ### 6.1 Yêu cầu
 
 - Node.js 20 LTS và npm.
 - Python 3.11 hoặc 3.12.
 - Git.
-- IPFS Kubo nếu phát triển phần IPFS.
+- IPFS Kubo bắt buộc để chạy demo upload/retrieve; không cần cho unit test dùng mock.
 
 ### 6.2 Cài dependencies
 
 Mở PowerShell tại thư mục repository:
 
 ```powershell
-npm install
+npm ci
+# Nếu máy chỉ có Python 3.12, dùng py -3.12 thay cho py -3.11.
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
+
+Khi chạy local, để `SEPOLIA_RPC_URL` và `DEPLOYER_PRIVATE_KEY` rỗng; không giữ private key placeholder không hợp lệ. Cả `SSI_RPC_URL` và `SSI_EXPECTED_CHAIN_ID` phải vắng mặt trong `.env` và môi trường terminal. Điền ví local và RSA password theo quickstart trước khi mở dashboard.
 
 `requirements.txt` bao gồm `python-dotenv` và các dependency fixture của dashboard. Chỉ điền private key của account Hardhat local hoặc ví Sepolia dành riêng cho đồ án. Không sử dụng ví chứa tài sản thật.
 
@@ -216,7 +222,7 @@ Giữ Hardhat node đang chạy, sau đó mở terminal khác:
 
 ```powershell
 # Dùng ID mới cho mỗi deployment có chủ đích; không tái dùng manifest cũ.
-$env:SSI_DEPLOYMENT_ID = "local-demo-001"
+$env:SSI_DEPLOYMENT_ID = "local_demo_001"
 npm run deploy:local
 
 # Chép 3 địa chỉ từ manifest vào .env: IDENTITY_SBT_ADDRESS,
@@ -358,7 +364,7 @@ chính manifest đó trong phiên chạy kế tiếp trước khi cấp role và
 Sau đó:
 
 ```powershell
-$env:SSI_DEPLOYMENT_ID = "sepolia-demo-001"
+$env:SSI_DEPLOYMENT_ID = "sepolia_demo_001"
 npm run deploy:sepolia
 npm run roles:sepolia
 ```
